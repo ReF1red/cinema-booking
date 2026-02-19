@@ -6,8 +6,8 @@ import enum
 
 
 class UserRole(str, enum.Enum):
-    ADMIN = "Admin"
-    CLIENT = "Client"
+    ADMIN = "admin"
+    CLIENT = "client"
 
 class User(Base):
     __tablename__ = "users"
@@ -22,7 +22,7 @@ class User(Base):
 
     bookings = relationship("Booking", back_populates="user")
     action_logs = relationship("ActionLog", back_populates="user")
-
+    
 '''class Admin(Base):
     __tablename__ = "admins"
 
@@ -40,9 +40,10 @@ class User(Base):
 class ActionLog(Base):
     __tablename__ = "action_logs"
 
-    user_id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     user_email = Column(String, nullable=True)
-    action_type= Column(String, nullable=False)
+    action_type = Column(String, nullable=False)
     details = Column(Text, nullable=True)
     ip_address = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
