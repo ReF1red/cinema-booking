@@ -27,7 +27,7 @@ class CityService:
                 detail="City already exists"
             )
         
-        new_city = models.City(name=city_data.name)
+        new_city = models.City(city_name=city_data.name)
         db.add(new_city)
         db.commit()
         db.refresh(new_city)
@@ -53,17 +53,31 @@ class CityService:
     def get_cinemas_by_city(db: Session, city_id: int):
         CityService.get_city_by_id(db, city_id)
 
-        return db.query(models.Cinema).filter(models.Cinema.city_id == city_id).all()
+        cinemas = db.query(models.Cinema).filter(models.Cinema.city_id == city_id).all()
+        result = []
+        for cinema in cinemas:
+            result.append({
+                "city_id": cinema.city_id,
+                "city_name": cinema.city.city_name,
+                "cinema_id": cinema.cinema_id,
+                "cinema_name": cinema.cinema_name,
+                "cinema_address": cinema.cinema_address
+            })
+        return result
 
     @staticmethod
     def get_cinema_by_id(db: Session, cinema_id: int):
         cinema = db.query(models.Cinema).filter(models.Cinema.cinema_id == cinema_id).first()
         if cinema is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Cinema not found"
-            )
-        return cinema
+            raise HTTPException(status_code=404, detail="Cinema not found")
+        
+        return {
+            "city_id": cinema.city_id,
+            "city_name": cinema.city.city_name,
+            "cinema_id": cinema.cinema_id,
+            "cinema_name": cinema.cinema_name,
+            "cinema_address": cinema.cinema_address
+        }
 
     @staticmethod
     def create_cinema(db: Session, cinema_data: schemas.CinemaCreate):
@@ -71,8 +85,8 @@ class CityService:
         
         new_cinema = models.Cinema(
             city_id=cinema_data.city_id,
-            name=cinema_data.name,
-            address=cinema_data.address
+            cinema_name=cinema_data.cinema_name,
+            cinema_address=cinema_data.cinema_address
         )
 
         db.add(new_cinema)

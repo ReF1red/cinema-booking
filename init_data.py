@@ -3,7 +3,7 @@ import os
 from app.database import SessionLocal
 from app.models import models
 
-# Пресет данных загружается из data\cities.json и data/cinemas.json
+# Пресет данных загружается из data\cities.json и data\cinemas.json
 
 def load_json(filename):
     filepath = os.path.join('data', filename)
@@ -43,17 +43,17 @@ def init_cities_and_cinemas():
 
         cinemas_data = load_json('cinemas.json')
 
-        cities = {city.name: city for city in db.query(models.City).all()}
+        cities = {city.city_name: city for city in db.query(models.City).all()}
 
         for cinema_data in cinemas_data:
-            city_name = cinema_data.pop('city')
+            city_name = cinema_data.pop('city_name')
             city = cities.get(city_name)
 
             if city:
                 cinema = models.Cinema(
                     city_id=city.city_id,
-                    name=cinema_data['name'],
-                    address=cinema_data.get('address')
+                    cinema_name=cinema_data['cinema_name'],
+                    cinema_address=cinema_data.get('cinema_address')
                 )
                 db.add(cinema)
             else:

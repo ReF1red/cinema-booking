@@ -41,7 +41,7 @@ class City(Base):
     __tablename__ = "cities"
 
     city_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, nullable=False)
+    city_name = Column(String, unique=True, nullable=False)
 
     cinemas = relationship("Cinema", back_populates="city")
 
@@ -50,8 +50,8 @@ class Cinema(Base):
 
     cinema_id = Column(Integer, primary_key=True, index=True)
     city_id = Column(Integer, ForeignKey("cities.city_id"), nullable=False)
-    name = Column(String, nullable=False)
-    address = Column(String)
+    cinema_name = Column(String, nullable=False)
+    cinema_address = Column(String)
 
     city = relationship("City", back_populates="cinemas")
     halls = relationship("Hall", back_populates="cinema")
@@ -61,7 +61,7 @@ class Hall(Base):
 
     hall_id = Column(Integer, primary_key=True, index=True)
     cinema_id = Column(Integer, ForeignKey("cinemas.cinema_id"), nullable=False)
-    name = Column(String, nullable=False)
+    hall_name = Column(String, nullable=False)
     seats_count = Column(Integer, nullable=False)
 
     cinema = relationship("Cinema", back_populates="halls")

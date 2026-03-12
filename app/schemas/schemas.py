@@ -29,29 +29,30 @@ class Token(BaseModel):
     token_type: str = "bearer"    
 
 class CityBase(BaseModel):
-    name: str
+    city_name: str
 
 class CityCreate(CityBase):
     pass
 
 class CityOut(CityBase):
     city_id: int
-    name: str
+    city_name: str
     class Config:
         from_attributes = True
 
 class CinemaBase(BaseModel):
     city_id: int
-    name: str
-    address: Optional[str] = None
+    cinema_name: str
+    cinema_address: Optional[str] = None
 
 class CinemaCreate(CinemaBase):
     pass
 
-class CinemaOut(CinemaBase):
-    cinema_id: int
+class CinemaOut(BaseModel):
     city_id: int
-    name: str
-    address: Optional[str] = None
+    city_name: str
+    cinema_id: int
+    cinema_name: str
+    cinema_address: Optional[str] = None
     class Config:
         from_attributes = True
