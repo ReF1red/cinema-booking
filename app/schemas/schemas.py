@@ -14,21 +14,19 @@ class UserLogin(BaseModel):
     password: str
 
 class UserOut(BaseModel):
-    id: int
+    user_id: int
     email: EmailStr
     full_name: Optional[str] = None
     role: str
     is_active: bool
     created_at: datetime
 
-    class Config: 
+    class Config:
         from_attributes = True
 
 class Token(BaseModel):
     access_token: str
-    token_type: str = "bearer"
-
-
+    token_type: str = "bearer"    
 
 class CityBase(BaseModel):
     name: str
@@ -37,12 +35,10 @@ class CityCreate(CityBase):
     pass
 
 class CityOut(CityBase):
-    id: int
+    city_id: int
     name: str
     class Config:
         from_attributes = True
-
-
 
 class CinemaBase(BaseModel):
     city_id: int
@@ -53,7 +49,7 @@ class CinemaCreate(CinemaBase):
     pass
 
 class CinemaOut(CinemaBase):
-    id: int
+    cinema_id: int
     city_id: int
     name: str
     address: Optional[str] = None

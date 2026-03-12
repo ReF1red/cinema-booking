@@ -12,7 +12,7 @@ class UserRole(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     full_name = Column(String, nullable=False)
@@ -22,26 +22,13 @@ class User(Base):
 
     bookings = relationship("Booking", back_populates="user")
     action_logs = relationship("ActionLog", back_populates="user")
-    
-'''class Admin(Base):
-    __tablename__ = "admins"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    password_hash = Column(String, nullable=False)
-    full_name = Column(String, nullable=False)
-    role = Column(Enum(UserRole), default=UserRole.ADMIN)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-
-    bookings = relationship("Booking", back_populates="user")
-    action_logs = relationship("ActionLog", back_populates="user")'''
 
 class ActionLog(Base):
     __tablename__ = "action_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    action_log_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=True)
     user_email = Column(String, nullable=True)
     action_type = Column(String, nullable=False)
     details = Column(Text, nullable=True)
@@ -53,7 +40,7 @@ class ActionLog(Base):
 class City(Base):
     __tablename__ = "cities"
 
-    id = Column(Integer, primary_key=True, index=True)
+    city_id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
 
     cinemas = relationship("Cinema", back_populates="city")
@@ -61,8 +48,8 @@ class City(Base):
 class Cinema(Base):
     __tablename__ = "cinemas"
 
-    id = Column(Integer, primary_key=True, index=True)
-    city_id = Column(Integer, ForeignKey("cities.id"), nullable=False)
+    cinema_id = Column(Integer, primary_key=True, index=True)
+    city_id = Column(Integer, ForeignKey("cities.city_id"), nullable=False)
     name = Column(String, nullable=False)
     address = Column(String)
 
@@ -72,8 +59,8 @@ class Cinema(Base):
 class Hall(Base):
     __tablename__ = "halls"
 
-    id = Column(Integer, primary_key=True, index=True)
-    cinema_id = Column(Integer, ForeignKey("cinemas.id"), nullable=False)
+    hall_id = Column(Integer, primary_key=True, index=True)
+    cinema_id = Column(Integer, ForeignKey("cinemas.cinema_id"), nullable=False)
     name = Column(String, nullable=False)
     seats_count = Column(Integer, nullable=False)
 
@@ -83,7 +70,7 @@ class Hall(Base):
 class Movie(Base):
     __tablename__ = "movies"
 
-    id = Column(Integer, primary_key=True, index=True)
+    movie_id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(Text)
     duration_min = Column(Integer, nullable=False)
@@ -96,9 +83,9 @@ class Movie(Base):
 class Session(Base):
     __tablename__ = "sessions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    hall_id = Column(Integer, ForeignKey("halls.id"), nullable=False)
-    movie_id = Column(Integer, ForeignKey("movies.id"), nullable=False)
+    session_id = Column(Integer, primary_key=True, index=True)
+    hall_id = Column(Integer, ForeignKey("halls.hall_id"), nullable=False)
+    movie_id = Column(Integer, ForeignKey("movies.movie_id"), nullable=False)
     start_time = Column(DateTime, nullable=False)
     price = Column(Float, nullable=False)
     available_seats = Column(Integer, nullable=False)
@@ -111,9 +98,9 @@ class Session(Base):
 class Booking(Base):
     __tablename__ = "bookings"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    session_id = Column(Integer, ForeignKey("sessions.id"), nullable=False)
+    booking_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    session_id = Column(Integer, ForeignKey("sessions.session_id"), nullable=False)
     booking_time = Column(DateTime, default=datetime.datetime.utcnow)
     status = Column(String, default="confirmed")
     total_price = Column(Float)
@@ -126,8 +113,8 @@ class Booking(Base):
 class Ticket(Base):
     __tablename__ = "tickets"
 
-    id = Column(Integer, primary_key=True, index=True)
-    booking_id = Column(Integer, ForeignKey("bookings.id"), nullable=False)
+    ticket_id = Column(Integer, primary_key=True, index=True)
+    booking_id = Column(Integer, ForeignKey("bookings.booking_id"), nullable=False)
     seat_row = Column(Integer, nullable=False)
     seat_number = Column(Integer, nullable=False)
 
@@ -136,8 +123,8 @@ class Ticket(Base):
 class FraudLog(Base):
     __tablename__ = "fraud_log"
 
-    id = Column(Integer, primary_key=True, index=True)
-    booking_id = Column(Integer, ForeignKey("bookings.id"), unique=True)
+    fraud_log_id = Column(Integer, primary_key=True, index=True)
+    booking_id = Column(Integer, ForeignKey("bookings.booking_id"), unique=True)
     risk_score = Column(Float)
     reason = Column(String)
     is_blocked = Column(Boolean, default=False)

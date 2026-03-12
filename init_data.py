@@ -51,7 +51,7 @@ def init_cities_and_cinemas():
 
             if city:
                 cinema = models.Cinema(
-                    city_id=city.id,
+                    city_id=city.city_id,
                     name=cinema_data['name'],
                     address=cinema_data.get('address')
                 )
