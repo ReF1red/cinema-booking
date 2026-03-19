@@ -20,7 +20,7 @@ class CityService:
 
     @staticmethod
     def create_city(db: Session, city_data: schemas.CityCreate):
-        exist_city = db.query(models.City).filter(models.City.name == city_data.name).first()
+        exist_city = db.query(models.City).filter(models.City.city_name == city_data.name).first()
         if exist_city:
             raise HTTPException(
                 status_code=400,

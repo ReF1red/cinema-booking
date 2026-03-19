@@ -56,3 +56,19 @@ class CinemaOut(BaseModel):
     cinema_address: Optional[str] = None
     class Config:
         from_attributes = True
+
+class MovieBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    duration_min: int
+    genre: Optional[str] = None
+    poster_url: Optional[str] = None
+    release_year: Optional[int] = None
+
+class MovieCreate(MovieBase):
+    pass
+
+class MovieOut(MovieBase):
+    movie_id: int
+    class Config:
+        from_attributes = True
