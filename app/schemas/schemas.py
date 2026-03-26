@@ -72,3 +72,32 @@ class MovieOut(MovieBase):
     movie_id: int
     class Config:
         from_attributes = True
+
+class HallBase(BaseModel):
+    cinema_id: int
+    hall_name: str
+    rows_count: int
+    seats_per_row: int
+
+class HallCreate(HallBase):
+    pass
+
+class HallOut(HallBase):
+    hall_id: int
+    cinema_id: int
+    hall_name: str
+    rows_count: int
+    seats_per_row: int
+    total_seats: int=0
+    class Config:
+        from_attributes = True
+
+class SeatBase(BaseModel):
+    row_letter: str
+    seat_number: int
+
+class SeatOut(SeatBase):
+    seat_id: int
+    is_booked: bool = False
+    class Config:
+        from_attributes = True

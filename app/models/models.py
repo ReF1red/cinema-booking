@@ -62,10 +62,23 @@ class Hall(Base):
     hall_id = Column(Integer, primary_key=True, index=True)
     cinema_id = Column(Integer, ForeignKey("cinemas.cinema_id"), nullable=False)
     hall_name = Column(String, nullable=False)
-    seats_count = Column(Integer, nullable=False)
-
+    rows_count = Column(Integer, nullable=False)
+    seats_per_row = Column(Integer, nullable=False)
+        
     cinema = relationship("Cinema", back_populates="halls")
     sessions = relationship("Session", back_populates="hall")
+    seats = relationship("Seat", back_populates="hall")
+
+class Seat(Base):
+    __tablename__ = "seats"
+    
+    seat_id = Column(Integer, primary_key=True, index=True)
+    hall_id = Column(Integer, ForeignKey("halls.hall_id"), nullable=False)
+    row_letter = Column(String(1), nullable=False)
+    seat_number = Column(Integer, nullable=False)
+
+    hall = relationship("Hall", back_populates="seats")
+    tickets = relationship("Ticket", back_populates="seat")
 
 class Movie(Base):
     __tablename__ = "movies"
@@ -115,10 +128,10 @@ class Ticket(Base):
 
     ticket_id = Column(Integer, primary_key=True, index=True)
     booking_id = Column(Integer, ForeignKey("bookings.booking_id"), nullable=False)
-    seat_row = Column(Integer, nullable=False)
-    seat_number = Column(Integer, nullable=False)
+    seat_id = Column(Integer, ForeignKey("seats.seat_id"), nullable=False)
 
     booking = relationship("Booking", back_populates="tickets")
+    seat = relationship("Seat", back_populates="tickets")
 
 class FraudLog(Base):
     __tablename__ = "fraud_log"
