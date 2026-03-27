@@ -101,3 +101,21 @@ class SeatOut(SeatBase):
     is_booked: bool = False
     class Config:
         from_attributes = True
+
+class SessionBase(BaseModel):
+    hall_id: int
+    movie_id: int
+    start_time: datetime
+    price: float
+
+class SessionCreate(SessionBase):
+    pass 
+
+class SessionOut(SessionBase):
+    session_id: int
+    available_seats: int
+    hall_name: Optional[str] = None
+    movie_title: Optional[str] = None
+    total_seats: Optional[int] = None
+    class Config:
+        from_attributes = True
