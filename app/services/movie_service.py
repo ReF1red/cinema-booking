@@ -7,7 +7,26 @@ import json
 class MovieService:
     @staticmethod
     def get_all_movies(db: Session):
-        return db.query(models.Movie).all()
+        movies = db.query(models.Movie).all()
+        result = []
+        for movie in movies:
+            result.append({
+                "movie_id": movie.movie_id,
+                "title": movie.title,
+                "description": movie.description,
+                "duration_min": movie.duration_min,
+                "genre": movie.genre,
+                "poster_url": movie.poster_url,
+                "release_year": movie.release_year,
+                "rating": movie.rating,
+                "director": movie.director,
+                "writer": movie.writer,
+                "country": movie.country,
+                "budget_amount": movie.budget_amount,
+                "budget_currency": movie.budget_currency,
+                "main_actors": json.loads(movie.main_actors) if movie.main_actors else None
+            })
+        return result
     
     @staticmethod
     def get_movie_by_id(db: Session, movie_id: int):
@@ -37,7 +56,7 @@ class MovieService:
             "country": movie.country,
             "budget_amount": movie.budget_amount,
             "budget_currency": movie.budget_currency,
-            "main_actors": main_actors
+            "main_actors": json.loads(movie.main_actors) if movie.main_actors else None
         }
     
     @staticmethod
@@ -65,12 +84,32 @@ class MovieService:
         db.commit()
         db.refresh(new_movie)
         
-        return new_movie
+        return {
+            "movie_id": new_movie.movie_id,
+            "title": new_movie.title,
+            "description": new_movie.description,
+            "duration_min": new_movie.duration_min,
+            "genre": new_movie.genre,
+            "poster_url": new_movie.poster_url,
+            "release_year": new_movie.release_year,
+            "rating": new_movie.rating,
+            "director": new_movie.director,
+            "writer": new_movie.writer,
+            "country": new_movie.country,
+            "budget_amount": new_movie.budget_amount,
+            "budget_currency": new_movie.budget_currency,
+            "main_actors": json.loads(new_movie.main_actors) if new_movie.main_actors else None
+        }
     
     @staticmethod
     def update_movie(db: Session, movie_id: int, movie_data: schemas.MovieCreate):
-        movie = MovieService.get_movie_by_id(db, movie_id)
-        
+        movie = db.query(models.Movie).filter(models.Movie.movie_id == movie_id).first()
+        if not movie:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Movie not found"
+            )  
+              
         movie.title = movie_data.title
         movie.description = movie_data.description
         movie.duration_min = movie_data.duration_min
@@ -90,12 +129,31 @@ class MovieService:
         db.commit()
         db.refresh(movie)
         
-        return movie
+        return {
+            "movie_id": movie.movie_id,
+            "title": movie.title,
+            "description": movie.description,
+            "duration_min": movie.duration_min,
+            "genre": movie.genre,
+            "poster_url": movie.poster_url,
+            "release_year": movie.release_year,
+            "rating": movie.rating,
+            "director": movie.director,
+            "writer": movie.writer,
+            "country": movie.country,
+            "budget_amount": movie.budget_amount,
+            "budget_currency": movie.budget_currency,
+            "main_actors": json.loads(movie.main_actors) if movie.main_actors else None
+        }    
     
     @staticmethod
     def delete_movie(db: Session, movie_id: int):
-        movie = MovieService.get_movie_by_id(db, movie_id)
-
+        movie = db.query(models.Movie).filter(models.Movie.movie_id == movie_id).first()
+        if not movie:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Movie not found"
+            )
         sessions = db.query(models.Session).filter(models.Session.movie_id == movie_id).first()
         if sessions:
             raise HTTPException(

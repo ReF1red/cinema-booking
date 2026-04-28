@@ -37,6 +37,27 @@ class BookingService:
                 detail = "Session already started"      
             )
         
+        MAX_SEATS_PER_BOOKING = 4
+        MAX_TOTAL_BOOKED_SEATS = 4
+
+        if len(booking_data.seats) > MAX_SEATS_PER_BOOKING:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Нельзя забронировать более {MAX_SEATS_PER_BOOKING} мест за одну бронь"
+            )
+        
+        total_booked = db.query(models.Ticket).join(models.Booking).filter(
+            models.Booking.user_id == user_id,
+            models.Booking.status == "confirmed",
+            models.Ticket.is_paid == False
+        ).count()
+        
+        if total_booked + len(booking_data.seats) > MAX_TOTAL_BOOKED_SEATS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"У вас уже {total_booked} забронированных мест. Нельзя забронировать более {MAX_TOTAL_BOOKED_SEATS} мест одновременно"
+            )
+        
         seats = db.query(models.Seat).filter(models.Seat.seat_id.in_(booking_data.seats)).all()
 
         for seat in seats:
@@ -185,24 +206,10 @@ class BookingService:
                 detail = "Booking not found"
             )
         
-        if booking.status == "cancelled":
-            raise HTTPException(
-                status_code = status.HTTP_400_BAD_REQUEST,
-                detail = "Booking already cancelled"
-            )
-        tickets = db.query(models.Ticket).filter(
-            models.Ticket.booking_id == booking.booking_id
-        ).all()
+        session = booking.session
+        session.available_seats += len(booking.tickets)
 
-        session = db.query(models.Session).filter(
-            models.Session.session_id == booking.session_id
-        ).first()        
-
-        if session:
-            session.available_seats += len(tickets)
-
-        booking.status = "cancelled"
-
+        db.delete(booking)
         db.commit()
 
         return {"message": "Booking cancelled successfully"}

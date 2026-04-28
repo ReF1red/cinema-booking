@@ -61,9 +61,6 @@ def cancel_booking(
     user_id = current_user.user_id if current_user else None
     user_email = current_user.email if current_user else None
 
-    db.delete(booking)
-    db.commit()
-
     LogService.log_action(
         db = db,
         user_id = user_id,
@@ -99,7 +96,7 @@ def pay_booking(
     if booking.session.start_time <= datetime.now():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            datail="Session already started"
+            detail="Session already started"
         )
     
     for ticket in booking.tickets:
@@ -125,11 +122,14 @@ def buy_ticket(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_active_user)
 ):
-    booking = BookingService.create_booking(db, current_user.user_id, booking_data)
+    booking_dict = BookingService.create_booking(db, current_user.user_id, booking_data)
     
-    for ticket in booking["tickets"]:
-        ticket_obj = db.query(models.Ticket).filter(models.Ticket.ticket_id == ticket["ticket_id"]).first()
-        ticket_obj.is_paid = True
+    booking_obj = db.query(models.Booking).filter(
+        models.Booking.booking_id == booking_dict["booking_id"]
+    ).first()
+
+    for ticket in booking_obj.tickets:
+        ticket.is_paid = True 
     
     db.commit()
     
@@ -139,12 +139,12 @@ def buy_ticket(
         user_email=current_user.email,
         action_type="BUY_TICKET",
         details={
-            "booking_id": booking["booking_id"],
-            "session_id": booking["session_id"],
-            "total_price": booking["total_price"],
-            "seats_count": len(booking["seats"])
+            "booking_id": booking_dict["booking_id"],
+            "session_id": booking_dict["session_id"],
+            "total_price": booking_dict["total_price"],
+            "seats_count": len(booking_dict["seats"])
         },
         ip_address=request.client.host
     )
     
-    return booking
+    return booking_dict

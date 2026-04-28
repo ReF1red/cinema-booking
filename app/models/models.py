@@ -82,7 +82,7 @@ class Hall(Base):
         
     cinema = relationship("Cinema", back_populates="halls")
     sessions = relationship("Session", back_populates="hall")
-    seats = relationship("Seat", back_populates="hall")
+    seats = relationship("Seat", back_populates="hall", cascade="all, delete-orphan")
 
 class Seat(Base):
     __tablename__ = "seats"
@@ -142,7 +142,7 @@ class Booking(Base):
 
     user = relationship("User", back_populates="bookings")
     session = relationship("Session", back_populates="bookings")
-    tickets = relationship("Ticket", back_populates="booking")
+    tickets = relationship("Ticket", back_populates="booking", cascade="all, delete-orphan")
     fraud_log = relationship("FraudLog", back_populates="booking", uselist=False)
 
 class Ticket(Base):

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, Request, HTTPException
+from fastapi import APIRouter, Depends, Query, Request, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.models import models
@@ -6,7 +6,7 @@ from app.schemas import schemas
 from app.database import get_db
 from app.services.session_service import SessionService
 from app.services.log_service import LogService
-from app.api.deps import get_current_user, get_current_cinema_admin
+from app.api.deps import get_optional_user, get_current_cinema_admin
 from datetime import datetime
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
@@ -32,7 +32,7 @@ def get_session_by_id(
     session_id: int,
     request:Request,
     db = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_optional_user)
     ):
     session = SessionService.get_session_by_id(db, session_id)
 
@@ -63,14 +63,14 @@ def create_session(
     hall = db.query(models.Hall).filter(models.Hall.hall_id == session_data.hall_id).first()
     if not hall:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Hall not found"
         )
     
     if current_user.role == models.UserRole.CINEMA_ADMIN:
         if hall.cinema_id != current_user.cinema_id:
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied to this hall"
             )
         
@@ -104,7 +104,7 @@ def update_session(
     session = db.query(models.Session).filter(models.Session.session_id == session_id).first()
     if not session:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found"
         )
     
@@ -113,7 +113,7 @@ def update_session(
     if current_user.role == models.UserRole.CINEMA_ADMIN:
         if hall.cinema_id != current_user.cinema_id:
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied to this session"
             )
         
@@ -128,9 +128,9 @@ def update_session(
         user_email = user_email,
         action_type = "UPDATE_SESSION",
         details = {
-            "session_id": session["session_id"],
-            "hall_id": session["hall_id"],
-            "movie_id": session["movie_id"]
+            "session_id": session.session_id,
+            "hall_id": session.hall_id,
+            "movie_id": session.movie_id
         },
         ip_address = request.client.host
     )
@@ -147,7 +147,7 @@ def delete_session(
     session = db.query(models.Session).filter(models.Session.session_id == session_id).first()
     if not session:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found"
         )
     
@@ -156,7 +156,7 @@ def delete_session(
     if current_user.role == models.UserRole.CINEMA_ADMIN:
         if hall.cinema_id != current_user.cinema_id:
             raise HTTPException(
-                status_code=403,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied to this session"
             )
         

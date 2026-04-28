@@ -147,30 +147,30 @@ class HallService:
         booked_seat_ids = set()
         paid_seat_ids = set()
 
-        if session_id != None:
+        if session_id is not None:
             tickets = db.query(models.Ticket).join(models.Booking).filter(
                 models.Booking.session_id == session_id,
                 models.Booking.status == "confirmed"
             ).all()
 
-            booked_seat_ids = {t.seat_id for t in tickets if t.is_paid}
+            booked_seat_ids = {t.seat_id for t in tickets if not t.is_paid}
             paid_seat_ids = {t.seat_id for t in tickets if t.is_paid}
 
         result = []
 
         for seat in seats:
             if seat.seat_id in paid_seat_ids:
-                status = "paid"
+                seat_status = "paid"
             elif seat.seat_id in booked_seat_ids:
-                status = "booked"
+                seat_status = "booked"
             else:
-                status = "free"
+                seat_status = "free"
 
             result.append({
                 "seat_id": seat.seat_id,
                 "row_letter": seat.row_letter,
                 "seat_number": seat.seat_number,
-                "status": status
+                "status": seat_status
             })
 
         return result

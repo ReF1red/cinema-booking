@@ -5,7 +5,7 @@ from app.schemas import schemas
 from app.database import get_db
 from app.services.movie_service import MovieService
 from app.services.log_service import LogService
-from app.api.deps import get_current_user, get_current_cinema_admin
+from app.api.deps import get_optional_user, get_current_cinema_admin
 
 router = APIRouter(prefix="/movies", tags=["Movies"])
 
@@ -18,7 +18,7 @@ def get_movie_by_id(
     movie_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_optional_user)
     ):
     
     movie =  MovieService.get_movie_by_id(db, movie_id)
@@ -92,7 +92,7 @@ def delete_movie(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_cinema_admin)
 ):
-    movie = MovieService.get_movie_by_id(db, movie_id)
+    movie_dict = MovieService.get_movie_by_id(db, movie_id)
 
     user_id = current_user.user_id if current_user else None
     user_email = current_user.email if current_user else None
@@ -102,10 +102,7 @@ def delete_movie(
         user_id = user_id,
         user_email = user_email,
         action_type = "DELETE_MOVIE",
-        details = {"movie": {
-            "movie_id": movie.movie_id,
-            "title": movie.title
-        }},
+        details={"movie": movie_dict},
         ip_address = request.client.host
     )
 

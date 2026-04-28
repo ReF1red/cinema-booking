@@ -6,7 +6,7 @@ from app.database import get_db
 from app.services.hall_service import HallService
 from app.services.log_service import LogService
 from app.models import models
-from app.api.deps import get_current_user, get_current_cinema_admin
+from app.api.deps import get_current_user, get_current_cinema_admin, get_optional_user
 
 router = APIRouter(prefix="/halls", tags=["Halls"])
 
@@ -14,16 +14,15 @@ router = APIRouter(prefix="/halls", tags=["Halls"])
 def get_halls_by_cinema(
     cinema_id: int,
     db = Depends(get_db),
-    current_user = Depends(get_current_user)
     ):
-    return HallService.get_halls_by_cinema(db, cinema_id, current_user)
+    return HallService.get_halls_by_cinema(db, cinema_id)
 
 @router.get("/halls/{hall_id}", response_model=schemas.HallOut)
 def get_hall_by_id(
     hall_id: int,
     request: Request,
     db = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_optional_user)
     ):
     hall = HallService.get_hall_by_id(db, hall_id)
 
@@ -48,7 +47,7 @@ def get_seats_by_hall(
     request: Request,
     session_id: int = None,
     db = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_optional_user)
     ):
     seats = HallService.get_seats_by_hall(db, hall_id, session_id)
 
