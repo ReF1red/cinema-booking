@@ -114,7 +114,7 @@ class SeatBase(BaseModel):
 
 class SeatOut(SeatBase):
     seat_id: int
-    is_booked: bool = False
+    status: str
     class Config:
         from_attributes = True
 

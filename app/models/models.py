@@ -151,7 +151,8 @@ class Ticket(Base):
     ticket_id = Column(Integer, primary_key=True, index=True)
     booking_id = Column(Integer, ForeignKey("bookings.booking_id"), nullable=False)
     seat_id = Column(Integer, ForeignKey("seats.seat_id"), nullable=False)
-
+    is_paid = Column(Boolean, default=False)
+ 
     booking = relationship("Booking", back_populates="tickets")
     seat = relationship("Seat", back_populates="tickets")
 
