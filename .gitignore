@@ -6,7 +6,8 @@ __pycache__/
 
 *.db
 *.db-journal
+data/cleaned_cinema_data.csv
 
 .vscode/
 
-app/ai_models/
+catboost_info/
