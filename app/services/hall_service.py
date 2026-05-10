@@ -150,7 +150,7 @@ class HallService:
         if session_id is not None:
             tickets = db.query(models.Ticket).join(models.Booking).filter(
                 models.Booking.session_id == session_id,
-                models.Booking.status == "confirmed"
+                models.Booking.status != "cancelled"  # <-- исключаем только отменённые
             ).all()
 
             booked_seat_ids = {t.seat_id for t in tickets if not t.is_paid}

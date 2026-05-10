@@ -55,9 +55,6 @@ def cancel_booking(
     ):
     booking = BookingService.get_booking_by_id(db, booking_id, current_user.user_id)
 
-    session  = booking.session
-    session.available_seats += len(booking.tickets)
-
     user_id = current_user.user_id if current_user else None
     user_email = current_user.email if current_user else None
 
@@ -86,12 +83,17 @@ def pay_booking(
     booking = db.query(models.Booking).filter(
         models.Booking.booking_id == booking_id,
         models.Booking.user_id == current_user.user_id
-    ).first()
+    ).with_for_update().first()
     
     if not booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Booking not found"
+        )
+    if booking.status == "paid":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Booking already paid"
         )
     if booking.session.start_time <= datetime.now():
         raise HTTPException(
@@ -101,6 +103,7 @@ def pay_booking(
     
     for ticket in booking.tickets:
         ticket.is_paid = True
+    booking.status = "paid"
 
     db.commit()
 
@@ -126,10 +129,23 @@ def buy_ticket(
     
     booking_obj = db.query(models.Booking).filter(
         models.Booking.booking_id == booking_dict["booking_id"]
-    ).first()
+    ).with_for_update().first()
+
+    if not booking_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking not found"
+        )
+    
+    if booking_obj.session.start_time <= datetime.now():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Session already started"
+        )
 
     for ticket in booking_obj.tickets:
-        ticket.is_paid = True 
+        ticket.is_paid = True
+    booking_obj.status = "paid"
     
     db.commit()
     
