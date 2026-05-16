@@ -102,8 +102,6 @@ class BookingService:
             )
             db.add(ticket)
 
-        session.available_seats -= len(booking_data.seats)
-
         db.commit()
         db.refresh(new_booking)
 
@@ -176,8 +174,7 @@ class BookingService:
             )
         
         session = booking.session
-        session.available_seats += len(booking.tickets)
-
+        
         db.delete(booking)
         db.commit()
 

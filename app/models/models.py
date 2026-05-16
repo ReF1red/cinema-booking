@@ -124,7 +124,6 @@ class Session(Base):
     movie_id = Column(Integer, ForeignKey("movies.movie_id"), nullable=False)
     start_time = Column(DateTime, nullable=False)
     price = Column(Float, nullable=False)
-    available_seats = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     hall = relationship("Hall", back_populates="sessions")

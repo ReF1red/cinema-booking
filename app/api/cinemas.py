@@ -8,16 +8,16 @@ from app.services.cinema_service import CinemaService
 from app.services.log_service import LogService
 from app.api.deps import get_current_admin
 
-router = APIRouter(prefix="/cities", tags=["Cinemas"])
+router = APIRouter(prefix="/cinemas", tags=["Cinemas"])
 
-@router.get("/{city_id}/cinemas", response_model=List[schemas.CinemaOut])
+@router.get("/by-city/{city_id}", response_model=List[schemas.CinemaOut])
 def get_cinemas_by_city(
     city_id: int,
     db = Depends(get_db)
     ):
     return CinemaService.get_cinemas_by_city(db, city_id)
 
-@router.post("/admin/cinemas", response_model=schemas.CinemaOut)
+@router.post("/admin", response_model=schemas.CinemaOut)
 def create_cinema(
     cinema_data: schemas.CinemaCreate,
     request: Request,
@@ -40,7 +40,7 @@ def create_cinema(
 
     return cinema
 
-@router.put("/admin/cinemas/{cinema_id}", response_model=schemas.CinemaOut)
+@router.put("/admin/{cinema_id}", response_model=schemas.CinemaOut)
 def update_cinema(
     cinema_id: int,
     cinema_data: schemas.CinemaCreate,
@@ -64,7 +64,7 @@ def update_cinema(
 
     return cinema
 
-@router.delete("/admin/cinemas/{cinema_id}")
+@router.delete("/admin/{cinema_id}")
 def delete_cinema(
     cinema_id: int,
     request: Request,

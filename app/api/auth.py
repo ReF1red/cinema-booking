@@ -158,3 +158,7 @@ def change_password(
     )
 
     return {"message": "Password changed successfully"}
+
+@router.get("/me", response_model=schemas.UserOut)
+def get_me(current_user = Depends(get_current_active_user)):
+    return current_user

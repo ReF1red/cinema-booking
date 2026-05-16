@@ -6,6 +6,22 @@ from datetime import datetime, timedelta
 
 class SessionService:
     @staticmethod
+    def get_available_seats(db: Session, session_id: int) -> int:
+        session = db.query(models.Session).filter(models.Session.session_id == session_id).first()
+        if not session:
+            return 0
+        
+        hall = db.query(models.Hall).filter(models.Hall.hall_id == session.hall_id).first()
+        total = hall.rows_count * hall.seats_per_row
+        
+        taken = db.query(models.Ticket).join(models.Booking).filter(
+            models.Booking.session_id == session_id,
+            models.Booking.status.in_(["confirmed", "paid"])
+        ).count()
+        
+        return total - taken
+
+    @staticmethod
     def get_sessions_by_movie(db: Session, movie_id: int, date: str = None):
         query = db.query(models.Session).filter(models.Session.movie_id == movie_id)
         
@@ -38,7 +54,7 @@ class SessionService:
                 "movie_id": session.movie_id,
                 "start_time": session.start_time,
                 "price": session.price,
-                "available_seats": session.available_seats,
+                "available_seats": SessionService.get_available_seats(db, session.session_id),
                 "hall_name": hall.hall_name if hall else None,
                 "movie_title": movie.title if movie else None,
                 "total_seats": hall.rows_count * hall.seats_per_row if hall else None
@@ -79,7 +95,7 @@ class SessionService:
                 "movie_id": session.movie_id,
                 "start_time": session.start_time,
                 "price": session.price,
-                "available_seats": session.available_seats,
+                "available_seats": SessionService.get_available_seats(db, session.session_id)
             })
 
         return result
@@ -102,7 +118,7 @@ class SessionService:
             "movie_id": session.movie_id,
             "start_time": session.start_time,
             "price": session.price,
-            "available_seats": session.available_seats
+            "available_seats": SessionService.get_available_seats(db, session.session_id)
         }
     
     @staticmethod
@@ -127,14 +143,11 @@ class SessionService:
                 detail="Movie not found"
             )           
         
-        total_seats = hall.rows_count * hall.seats_per_row
-
         new_session = models.Session(
             hall_id = session_data.hall_id,
             movie_id = session_data.movie_id,
             start_time = session_data.start_time,
-            price = session_data.price,
-            available_seats = total_seats
+            price = session_data.price
         )
 
         db.add(new_session)
@@ -148,7 +161,7 @@ class SessionService:
             "movie_id": new_session.movie_id,
             "start_time": new_session.start_time,
             "price": new_session.price,
-            "available_seats": new_session.available_seats
+            "available_seats": SessionService.get_available_seats(db, new_session.session_id)
         }
     
     @staticmethod
@@ -175,7 +188,7 @@ class SessionService:
             "movie_id": session.movie_id,
             "start_time": session.start_time,
             "price": session.price,
-            "available_seats": session.available_seats
+            "available_seats": SessionService.get_available_seats(db, session.session_id)
         }
 
     @staticmethod
