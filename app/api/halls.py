@@ -6,7 +6,7 @@ from app.database import get_db
 from app.services.hall_service import HallService
 from app.services.log_service import LogService
 from app.models import models
-from app.api.deps import get_current_user, get_current_cinema_admin, get_optional_user
+from app.api.deps import get_current_cinema_admin, get_optional_user
 
 router = APIRouter(prefix="/halls", tags=["Halls"])
 

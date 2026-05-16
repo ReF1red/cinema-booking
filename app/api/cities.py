@@ -5,7 +5,7 @@ from app.schemas import schemas
 from app.database import get_db
 from app.services.city_service import CityService
 from app.services.log_service import LogService
-from app.api.deps import get_current_user, get_current_admin
+from app.api.deps import get_current_admin
 
 router = APIRouter(prefix="/cities", tags=["Cities"])
 
