@@ -112,6 +112,7 @@ class Movie(Base):
     budget_amount = Column(Float, nullable=True)
     budget_currency = Column(String, nullable=True)
     main_actors = Column(Text, nullable=True)
+    age_rating = Column(String, nullable=True)
 
     sessions = relationship("Session", back_populates="movie")
 
@@ -143,7 +144,6 @@ class Booking(Base):
     user = relationship("User", back_populates="bookings")
     session = relationship("Session", back_populates="bookings")
     tickets = relationship("Ticket", back_populates="booking", cascade="all, delete-orphan")
-    fraud_log = relationship("FraudLog", back_populates="booking", uselist=False)
 
 class Ticket(Base):
     __tablename__ = "tickets"
@@ -155,15 +155,3 @@ class Ticket(Base):
  
     booking = relationship("Booking", back_populates="tickets")
     seat = relationship("Seat", back_populates="tickets")
-
-class FraudLog(Base):
-    __tablename__ = "fraud_log"
-
-    fraud_log_id = Column(Integer, primary_key=True, index=True)
-    booking_id = Column(Integer, ForeignKey("bookings.booking_id"), unique=True)
-    risk_score = Column(Float)
-    reason = Column(String)
-    is_blocked = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-
-    booking = relationship("Booking", back_populates="fraud_log")

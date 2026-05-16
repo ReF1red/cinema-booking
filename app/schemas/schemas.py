@@ -80,6 +80,7 @@ class MovieBase(BaseModel):
     budget_amount: Optional[float] = None
     budget_currency: Optional[str] = None
     main_actors: Optional[List[str]] = None
+    age_rating: Optional[str] = None 
 
 class MovieCreate(MovieBase):
     pass

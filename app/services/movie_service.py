@@ -24,7 +24,8 @@ class MovieService:
                 "country": movie.country,
                 "budget_amount": movie.budget_amount,
                 "budget_currency": movie.budget_currency,
-                "main_actors": json.loads(movie.main_actors) if movie.main_actors else None
+                "main_actors": json.loads(movie.main_actors) if movie.main_actors else None,
+                "age_rating": movie.age_rating
             })
         return result
     
@@ -56,7 +57,8 @@ class MovieService:
             "country": movie.country,
             "budget_amount": movie.budget_amount,
             "budget_currency": movie.budget_currency,
-            "main_actors": json.loads(movie.main_actors) if movie.main_actors else None
+            "main_actors": json.loads(movie.main_actors) if movie.main_actors else None,
+            "age_rating": movie.age_rating
         }
     
     @staticmethod
@@ -77,7 +79,8 @@ class MovieService:
             country=movie_data.country,
             budget_amount=movie_data.budget_amount,
             budget_currency=movie_data.budget_currency,
-            main_actors=main_actors_json
+            main_actors=main_actors_json,
+            age_rating=movie_data.age_rating  
         )
         
         db.add(new_movie)
@@ -98,7 +101,8 @@ class MovieService:
             "country": new_movie.country,
             "budget_amount": new_movie.budget_amount,
             "budget_currency": new_movie.budget_currency,
-            "main_actors": json.loads(new_movie.main_actors) if new_movie.main_actors else None
+            "main_actors": json.loads(new_movie.main_actors) if new_movie.main_actors else None,
+            "age_rating": new_movie.age_rating
         }
     
     @staticmethod
@@ -122,6 +126,7 @@ class MovieService:
         movie.country = movie_data.country
         movie.budget_amount = movie_data.budget_amount
         movie.budget_currency = movie_data.budget_currency
+        movie.age_rating = movie_data.age_rating
         
         if movie_data.main_actors is not None:
             movie.main_actors = json.dumps(movie_data.main_actors)
@@ -143,7 +148,8 @@ class MovieService:
             "country": movie.country,
             "budget_amount": movie.budget_amount,
             "budget_currency": movie.budget_currency,
-            "main_actors": json.loads(movie.main_actors) if movie.main_actors else None
+            "main_actors": json.loads(movie.main_actors) if movie.main_actors else None,
+            "age_rating": movie.age_rating
         }    
     
     @staticmethod

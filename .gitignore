@@ -11,3 +11,5 @@ data/cleaned_cinema_data.csv
 .vscode/
 
 catboost_info/
+
+alembic.ini
