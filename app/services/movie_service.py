@@ -171,3 +171,41 @@ class MovieService:
         db.commit()
         
         return {"message": "Movie deleted successfully"}
+    
+    @staticmethod
+    def search_movies(db: Session, query: str):
+        if not query or len(query.strip()) < 2:
+            return MovieService.get_all_movies(db)
+        
+        search = f"%{query.strip()}%"
+        
+        movies = db.query(models.Movie).filter(
+            (models.Movie.title.ilike(search)) |
+            (models.Movie.genre.ilike(search)) |
+            (models.Movie.description.ilike(search)) |
+            (models.Movie.director.ilike(search)) |
+            (models.Movie.writer.ilike(search)) |
+            (models.Movie.main_actors.ilike(search))
+        ).all()
+        
+        result = []
+
+        for movie in movies:
+            result.append({
+                "movie_id": movie.movie_id,
+                "title": movie.title,
+                "description": movie.description,
+                "duration_min": movie.duration_min,
+                "genre": movie.genre,
+                "poster_url": movie.poster_url,
+                "release_year": movie.release_year,
+                "rating": movie.rating,
+                "director": movie.director,
+                "writer": movie.writer,
+                "country": movie.country,
+                "budget_amount": movie.budget_amount,
+                "budget_currency": movie.budget_currency,
+                "main_actors": json.loads(movie.main_actors) if movie.main_actors else None,
+                "age_rating": movie.age_rating
+            })
+        return result

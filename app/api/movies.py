@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Query
 from sqlalchemy.orm import Session
 from typing import List
 from app.schemas import schemas
@@ -12,6 +12,27 @@ router = APIRouter(prefix="/movies", tags=["Movies"])
 @router.get("/", response_model=List[schemas.MovieOut])
 def get_movies(db: Session = Depends(get_db)):
     return MovieService.get_all_movies(db)
+
+@router.get("/search", response_model=List[schemas.MovieOut])
+def search_movies(
+    q: str = Query(..., min_length=2, description="Поисковый запрос"),
+    request: Request = None,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_optional_user)
+):
+    result = MovieService.search_movies(db, q)
+    
+    if current_user:
+        LogService.log_action(
+            db=db,
+            user_id=current_user.user_id,
+            user_email=current_user.email,
+            action_type="SEARCH_MOVIES",
+            details={"query": q, "results_count": len(result)},
+            ip_address=request.client.host
+        )
+    
+    return result
 
 @router.get("/{movie_id}", response_model=schemas.MovieOut)
 def get_movie_by_id(
