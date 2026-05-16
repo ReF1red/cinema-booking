@@ -15,7 +15,7 @@ config.JWT_REFRESH_TOKEN_EXPIRES = timedelta(days = 30)
 config.JWT_COOKIE_CSRF_PROTECT = False
 config.JWT_COOKIE_SAMESITE = "lax"
 config.JWT_COOKIE_SECURE = False
-config.JWT_COOKIE_DOMAIN = "127.0.0.1"
+#config.JWT_COOKIE_DOMAIN = "127.0.0.1"
 config.JWT_ACCESS_COOKIE_PATH = "/"
 config.JWT_REFRESH_COOKIE_PATH = "/"
 

@@ -37,6 +37,14 @@ class RefreshTokenOut(BaseModel):
 class RefreshTokenCreate(BaseModel):
     refresh_token: str
 
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str
+
 class CityBase(BaseModel):
     city_name: str
 

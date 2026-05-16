@@ -11,9 +11,22 @@ async def get_optional_user(
     db: Session = Depends(get_db)
 ) -> Optional[models.User]:
     try:
-        token = await auth.get_token_from_request(request)
-        payload = auth.verify_token(token)
-        user_id = int(payload.sub)
+        token = request.cookies.get("access_token")
+        if not token:
+            auth_header = request.headers.get("Authorization")
+            if auth_header and auth_header.startswith("Bearer "):
+                token = auth_header[7:]
+        
+        if not token:
+            return None
+        
+        import jwt
+        payload = jwt.decode(
+            token,
+            auth.config.JWT_SECRET_KEY,
+            algorithms=[auth.config.JWT_ALGORITHM],
+        )
+        user_id = int(payload["sub"])
         user = db.query(models.User).filter(models.User.user_id == user_id).first()
         if user and user.is_active:
             return user
