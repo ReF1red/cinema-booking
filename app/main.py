@@ -2,8 +2,13 @@ from fastapi import FastAPI
 from app.api import auth, cities, movies, halls, sessions, bookings, cinemas, ai
 from authx.exceptions import MissingTokenError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+import os
 
 app = FastAPI(title="Cinema Booking API")
+
+os.makedirs("static/posters", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(auth.router)
 app.include_router(cities.router)
