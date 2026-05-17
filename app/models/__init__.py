@@ -1,1 +1,1 @@
-from .models import Base, User, UserRole, RefreshToken, ActionLog, City, Cinema, Hall, Seat, Movie, Session, Booking, Ticket
+from .models import Base, User, UserRole, RefreshToken, ActionLog, City, Cinema, Hall, Seat, Movie, Session, Booking, Ticket, TrainingData, TrainingHistory

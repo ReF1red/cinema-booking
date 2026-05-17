@@ -154,3 +154,29 @@ class Ticket(Base):
  
     booking = relationship("Booking", back_populates="tickets")
     seat = relationship("Seat", back_populates="tickets")
+
+class TrainingData(Base):
+    __tablename__ = "training_data"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    day_of_week = Column(Integer)
+    is_weekend = Column(Integer)
+    session_hour = Column(Integer)
+    ticket_price = Column(Float)
+    capacity = Column(Integer)
+    occu_perc = Column(Float)
+
+
+class TrainingHistory(Base):
+    __tablename__ = "training_history"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    trained_at = Column(DateTime, default=datetime.datetime.utcnow)
+    model_path = Column(String)
+    mae = Column(Float)
+    mape = Column(Float)
+    mse = Column(Float)
+    rmse = Column(Float)
+    r2 = Column(Float)
+    samples_count = Column(Integer)
+    features_used = Column(Text)
