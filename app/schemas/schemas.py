@@ -152,14 +152,21 @@ class SeatInfo(BaseModel):
     
 class BookingCreate(BaseModel):
     session_id: int
-    seats: List[int]
+    seat_id: int
+
+class MultiBookingCreate(BaseModel):
+    session_id: int
+    seat_ids: List[int]
+
+class MultiActionRequest(BaseModel):
+    booking_ids: List[int]
 
 class BookingOut(BaseModel):
-    session_id: int
     booking_id: int
+    session_id: int
     booking_time: datetime
     status: str
     total_price: float
-    seats: List[SeatInfo]
+    seat: SeatInfo
     class Config:
         from_attributes = True
