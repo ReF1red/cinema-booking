@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
 
 class UserBase(BaseModel):
@@ -88,7 +88,21 @@ class MovieBase(BaseModel):
     budget_amount: Optional[float] = None
     budget_currency: Optional[str] = None
     main_actors: Optional[List[str]] = None
-    age_rating: Optional[str] = None 
+    age_rating: Optional[str] = None
+
+    @field_validator("rating")
+    @classmethod
+    def validate_rating(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and (v < 0 or v > 10):
+            raise ValueError("Rating must be between 0 and 10")
+        return v
+
+    @field_validator("duration_min")
+    @classmethod
+    def validate_duration(cls, v: int) -> int:
+        if v <= 0:
+            raise ValueError("Duration must be greater than 0")
+        return v
 
 class MovieCreate(MovieBase):
     pass

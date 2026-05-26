@@ -87,7 +87,8 @@ class BookingService:
                 "seat_id": seat.seat_id,
                 "row_letter": seat.row_letter,
                 "seat_number": seat.seat_number
-            }
+            },
+            "is_paid": False
         }
 
     @staticmethod

@@ -12,6 +12,8 @@ data/cleaned_cinema_data.csv
 frontend/node_modules/
 frontend/dist/
 
+backups/*.sql
+
 .vscode/
 
 catboost_info/
