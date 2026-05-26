@@ -9,6 +9,9 @@ tests/.env.test
 *.db-journal
 data/cleaned_cinema_data.csv
 
+frontend/node_modules/
+frontend/dist/
+
 .vscode/
 
 catboost_info/

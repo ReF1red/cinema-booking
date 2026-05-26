@@ -64,3 +64,5 @@ watchfiles==1.1.1
 websockets==16.0
 pytest>=9.0.0
 httpx>=0.28.0
+reportlab>=4.5.0
+qrcode>=8.2.0

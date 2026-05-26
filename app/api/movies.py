@@ -59,7 +59,7 @@ def get_movie_by_id(
             user_id = user_id,
             user_email = user_email,
             action_type = "VIEW_MOVIE",
-            details = {"movie_id": movie_id, "title": movie.title},
+            details = {"movie_id": movie_id, "title": movie["title"]},
             ip_address = request.client.host
         )    
 

@@ -139,6 +139,7 @@ class Booking(Base):
     booking_time = Column(DateTime, default=datetime.datetime.utcnow)
     status = Column(String, default="confirmed")
     total_price = Column(Float)
+    paid_at = Column(DateTime, nullable=True)
 
     user = relationship("User", back_populates="bookings")
     session = relationship("Session", back_populates="bookings")

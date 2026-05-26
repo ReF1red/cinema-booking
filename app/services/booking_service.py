@@ -120,7 +120,8 @@ class BookingService:
                 "booking_time": booking.booking_time,
                 "status": booking.status,
                 "total_price": booking.total_price,
-                "seat": seat
+                "seat": seat,
+                "is_paid": ticket.is_paid if ticket else False
             })
         return result
     

@@ -168,5 +168,6 @@ class BookingOut(BaseModel):
     status: str
     total_price: float
     seat: SeatInfo
+    is_paid: bool
     class Config:
         from_attributes = True
