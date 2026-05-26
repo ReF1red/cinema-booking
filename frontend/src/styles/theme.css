@@ -1,0 +1,57 @@
+@theme {
+  --color-primary: #E50914;
+  --color-primary-hover: #b80710;
+  --color-primary-subtle: rgba(229, 9, 20, 0.1);
+  --color-background: #0B0B0D;
+  --color-surface: #1A1A1F;
+  --color-surface-hover: #232329;
+  --color-text: #F5F5F7;
+  --color-text-muted: #9CA3AF;
+  --color-accent: #FFC857;
+  
+  --font-heading: 'Bebas Neue', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+}
+
+.text-glow {
+  text-shadow: 0 0 10px rgba(229, 9, 20, 0.5);
+}
+
+.box-glow {
+  box-shadow: 0 0 20px rgba(229, 9, 20, 0.15);
+}
+
+.surface-glow {
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.03);
+}
+
+/* Custom scrollbar for modern feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-hover);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a40;
+}
