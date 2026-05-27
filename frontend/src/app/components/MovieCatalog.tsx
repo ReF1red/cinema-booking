@@ -52,6 +52,10 @@ export function MovieCatalog() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+      setSearchQuery("");
+  }, []);
+
+  useEffect(() => {
     let isMounted = true;
     const load = async () => {
       setLoading(true);

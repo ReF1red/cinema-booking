@@ -179,18 +179,6 @@ export function BookingConfirmation() {
                       <h2 className="text-xl font-heading text-[#FFC857] uppercase tracking-widest mb-6 border-b border-[#F5F5F7]/10 pb-4">
                         Способ оплаты
                       </h2>
-                      <div className="bg-[#0B0B0D] border border-[#F5F5F7]/10 rounded-xl p-4 flex items-center gap-4 hover:border-[#E50914]/50 transition-colors cursor-pointer mb-6">
-                        <div className="w-12 h-8 bg-[#232329] rounded flex items-center justify-center">
-                          <CreditCard className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-white font-medium">•••• •••• •••• 4242</p>
-                          <p className="text-[#9CA3AF] text-sm">До 12/28</p>
-                        </div>
-                        <div className="w-4 h-4 rounded-full border-2 border-[#E50914] flex items-center justify-center bg-[#E50914]/20">
-                          <div className="w-2 h-2 rounded-full bg-[#E50914]" />
-                        </div>
-                      </div>
                       <div className="space-y-4">
                         <div>
                           <label className="text-[#9CA3AF] text-xs uppercase tracking-widest mb-2 block">Номер карты</label>

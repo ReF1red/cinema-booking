@@ -141,7 +141,30 @@ class SessionService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Movie not found"
-            )           
+            )     
+
+        movie_duration = movie.duration_min
+        session_end = session_data.start_time + timedelta(minutes=movie_duration)
+
+        start_time = session_data.start_time.replace(tzinfo=None) if session_data.start_time.tzinfo else session_data.start_time
+        session_end = start_time + timedelta(minutes=movie_duration)
+
+        conflicting = db.query(models.Session).filter(
+            models.Session.hall_id == session_data.hall_id,
+            models.Session.start_time < session_end
+        ).all()
+
+        if conflicting:
+            for conf in conflicting:
+                conf_movie = db.query(models.Movie).filter(models.Movie.movie_id == conf.movie_id).first()
+                conf_duration = conf_movie.duration_min if conf_movie else 120
+                conf_end = conf.start_time + timedelta(minutes=conf_duration)
+                if conf_end > start_time:
+                    raise HTTPException(
+                        status_code = status.HTTP_400_BAD_REQUEST,
+                        detail = f"В зале уже есть сеанс в это время: «{conf_movie.title if conf_movie else 'Фильм'}» "
+                                f"({conf.start_time.strftime('%H:%M')} – {conf_end.strftime('%H:%M')})"
+                    )  
         
         new_session = models.Session(
             hall_id = session_data.hall_id,
@@ -173,11 +196,44 @@ class SessionService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Session not found"
                 )
+        
+        movie = db.query(models.Movie).filter(
+            models.Movie.movie_id == session_data.movie_id
+        ).first()
+
+        if not movie:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Movie not found"
+            )  
     
         session.hall_id = session_data.hall_id
         session.movie_id = session_data.movie_id
         session.start_time = session_data.start_time
         session.price = session_data.price
+
+        movie_duration = movie.duration_min
+        session_end = session_data.start_time + timedelta(minutes=movie_duration)
+
+        start_time = session_data.start_time.replace(tzinfo=None) if session_data.start_time.tzinfo else session_data.start_time
+        session_end = start_time + timedelta(minutes=movie_duration)
+
+        conflicting = db.query(models.Session).filter(
+            models.Session.hall_id == session_data.hall_id,
+            models.Session.start_time < session_end
+        ).all()
+
+        if conflicting:
+            for conf in conflicting:
+                conf_movie = db.query(models.Movie).filter(models.Movie.movie_id == conf.movie_id).first()
+                conf_duration = conf_movie.duration_min if conf_movie else 120
+                conf_end = conf.start_time + timedelta(minutes=conf_duration)
+                if conf_end > start_time:
+                    raise HTTPException(
+                        status_code = status.HTTP_400_BAD_REQUEST,
+                        detail = f"В зале уже есть сеанс в это время: «{conf_movie.title if conf_movie else 'Фильм'}» "
+                                f"({conf.start_time.strftime('%H:%M')} – {conf_end.strftime('%H:%M')})"
+                    )
 
         db.commit()
         db.refresh(session)

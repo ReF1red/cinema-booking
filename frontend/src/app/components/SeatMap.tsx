@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Armchair, ChevronLeft } from "lucide-react";
+import { Armchair, ChevronLeft, XCircle } from "lucide-react";
 import { useApp } from "../../context/AppContext";
 import {
   fetchCinemasByCity,
@@ -18,9 +18,7 @@ import { Button } from "./ui/button";
 
 function isSessionStarted(startTime: string): boolean {
   const parsed = new Date(startTime).getTime();
-  if (Number.isNaN(parsed)) {
-    return false;
-  }
+  if (Number.isNaN(parsed)) return false;
   return parsed <= Date.now();
 }
 
@@ -37,8 +35,14 @@ export function SeatMap() {
   const [selectedSeatIds, setSelectedSeatIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const sessionIdNumber = Number(sessionId);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     if (!sessionIdNumber) {
@@ -71,9 +75,7 @@ export function SeatMap() {
         const matchedCinema = allCinemas.find((item) => item.cinema_id === hallData.cinema_id) ?? null;
         const matchedMovie = movies.find((item) => item.movie_id === sessionData.movie_id) ?? null;
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         setSession(sessionData);
         setHall(hallData);
@@ -81,40 +83,28 @@ export function SeatMap() {
         setCinema(matchedCinema);
         setMovie(matchedMovie);
       } catch (loadError) {
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
         setError(getErrorMessage(loadError, "Не удалось загрузить схему зала."));
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
 
     loadData();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [sessionIdNumber]);
 
   const seatsByRow = useMemo(() => {
     const grouped: Record<string, Seat[]> = {};
 
     seats.forEach((seat) => {
-      if (!grouped[seat.row_letter]) {
-        grouped[seat.row_letter] = [];
-      }
+      if (!grouped[seat.row_letter]) grouped[seat.row_letter] = [];
       grouped[seat.row_letter].push(seat);
     });
 
     return Object.entries(grouped)
-        .sort(([rowA], [rowB]) => rowA.localeCompare(rowB))
-        .map(([row, rowSeats]) => ({
-          row,
-          seats: rowSeats.sort((a, b) => a.seat_number - b.seat_number),
-        }));
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([row, rowSeats]) => ({ row, seats: rowSeats.sort((a, b) => a.seat_number - b.seat_number) }));
   }, [seats]);
 
   const selectedSeatLabels = useMemo(() => {
@@ -127,31 +117,19 @@ export function SeatMap() {
 
   const isGuest = user?.role === "guest";
 
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
-
-  if (loading) {
-    return <div className="p-8 text-center text-[#9CA3AF]">Загружаем схему зала...</div>;
-  }
-
-  if (error) {
-    return <div className="p-8 text-center text-red-400">{error}</div>;
-  }
-
-  if (!session || !movie || !cinema || !hall) {
-    return <div className="p-8 text-center text-white">Сеанс не найден</div>;
-  }
+  if (!user) return <Navigate to="/" replace />;
+  if (loading) return <div className="p-8 text-center text-[#9CA3AF]">Загружаем схему зала...</div>;
+  if (error) return <div className="p-8 text-center text-red-400">{error}</div>;
+  if (!session || !movie || !cinema || !hall) return <div className="p-8 text-center text-white">Сеанс не найден</div>;
 
   const ticketPrice = Math.round(session.price);
   const totalPrice = selectedSeatIds.length * ticketPrice;
-  const formattedDate = formatFullDate(session.start_time);
+
+
 
   const toggleSeat = (seat: Seat) => {
     if (isGuest) return;
-    if (seat.is_booked) {
-      return;
-    }
+    if (seat.is_booked) return;
     setSelectedSeatIds((prev) =>
         prev.includes(seat.seat_id) ? prev.filter((id) => id !== seat.seat_id) : [...prev, seat.seat_id],
     );
@@ -159,12 +137,10 @@ export function SeatMap() {
 
   const handleProceed = (mode: "buy" | "book") => {
     if (isGuest) return;
-    if (selectedSeatIds.length === 0) {
-      return;
-    }
+    if (selectedSeatIds.length === 0) return;
 
     if (mode === "book" && selectedSeatIds.length > 4) {
-      setError("Нельзя забронировать более 4 мест за раз.");
+      showToast("Нельзя забронировать более 4 мест за раз.");
       return;
     }
 
@@ -181,6 +157,14 @@ export function SeatMap() {
 
   return (
       <div className="flex-1 flex flex-col md:flex-row bg-[#0B0B0D] min-h-[calc(100vh-64px)] overflow-hidden">
+        {toast && (
+            <div className="fixed bottom-6 right-6 z-50 bg-red-500/10 border border-red-500/30 text-red-200 px-4 py-3 rounded-xl backdrop-blur-md flex items-center gap-3">
+              <XCircle className="w-5 h-5 text-red-400" />
+              <span className="text-sm">{toast}</span>
+              <button onClick={() => setToast(null)} className="text-white/40 hover:text-white/80">✕</button>
+            </div>
+        )}
+
         <div className="hidden md:flex w-[520px] bg-[#1A1A1F] border-r border-[#F5F5F7]/10 flex-col shrink-0 overflow-y-auto">
           <div className="p-8 space-y-8 flex-1">
             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#9CA3AF] hover:text-white transition-colors mb-4">
@@ -198,7 +182,7 @@ export function SeatMap() {
                   {cinema.cinema_name}
                 </p>
                 <p className="flex items-center gap-2 text-[#F5F5F7] font-medium">
-                  {formattedDate} • {formatTime(session.start_time)}
+                  {formatFullDate(session.start_time)} • {formatTime(session.start_time)}
                 </p>
                 <p>Зал: {hall.hall_name}</p>
               </div>
@@ -227,9 +211,7 @@ export function SeatMap() {
           {isGuest ? (
               <div className="p-6 border-t border-[#F5F5F7]/10 bg-[#0B0B0D]/50 text-center">
                 <p className="text-[#9CA3AF] mb-3">Для бронирования или покупки билетов необходимо войти.</p>
-                <Link to="/">
-                  <Button variant="default" className="w-full">Войти или зарегистрироваться</Button>
-                </Link>
+                <Link to="/"><Button variant="default" className="w-full">Войти или зарегистрироваться</Button></Link>
               </div>
           ) : (
               <div className="p-6 border-t border-[#F5F5F7]/10 bg-[#0B0B0D]/50 backdrop-blur-md space-y-3">
@@ -279,28 +261,21 @@ export function SeatMap() {
                                 key={seat.seat_id}
                                 disabled={isBooked || isGuest}
                                 onClick={() => toggleSeat(seat)}
-                                className={`
-                          w-8 h-8 md:w-10 md:h-10 rounded-t-lg rounded-b-sm flex items-center justify-center transition-all duration-300 relative group
-                          ${
+                                className={`w-8 h-8 md:w-10 md:h-10 rounded-t-lg rounded-b-sm flex items-center justify-center transition-all duration-300 relative group ${
                                     isBooked
                                         ? "bg-[#232329] border border-[#F5F5F7]/5 cursor-not-allowed opacity-50"
                                         : isSelected && !isGuest
                                             ? "bg-[#E50914] shadow-[0_0_15px_rgba(229,9,20,0.6)] border border-[#E50914] scale-110"
                                             : "bg-[#1A1A1F] border border-[#F5F5F7]/20 hover:border-[#FFC857] hover:bg-[#1A1A1F]/80 hover:scale-105"
-                                }
-                        `}
+                                }`}
                             >
                               <Armchair
                                   className={`w-5 h-5 md:w-6 md:h-6 ${
-                                      isBooked
-                                          ? "text-[#0B0B0D]"
-                                          : isSelected && !isGuest
-                                              ? "text-white"
-                                              : "text-[#9CA3AF] group-hover:text-[#FFC857]"
+                                      isBooked ? "text-[#0B0B0D]" : isSelected && !isGuest ? "text-white" : "text-[#9CA3AF] group-hover:text-[#FFC857]"
                                   }`}
                               />
                               {!isBooked && !isGuest && (
-                                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#0B0B0D] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-[#F5F5F7]/10 z-20">
+                                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#0B0B0D] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-[#F5F5F7]/10 z-30">
                                     Место {seat.row_letter}{seat.seat_number}
                                   </div>
                               )}
@@ -316,10 +291,7 @@ export function SeatMap() {
                     <span className="w-8 shrink-0" />
                     <div className="flex gap-2">
                       {seatsByRow[seatsByRow.length - 1].seats.map((seat) => (
-                          <div
-                              key={seat.seat_id}
-                              className="w-8 md:w-10 text-center text-[#9CA3AF] font-heading text-lg"
-                          >
+                          <div key={seat.seat_id} className="w-8 md:w-10 text-center text-[#9CA3AF] font-heading text-lg">
                             {seat.seat_number}
                           </div>
                       ))}
@@ -330,21 +302,15 @@ export function SeatMap() {
 
             <div className="flex gap-8 mt-16 text-sm text-[#9CA3AF] bg-[#1A1A1F] px-8 py-4 rounded-full border border-[#F5F5F7]/10 shadow-lg backdrop-blur-md">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-[#1A1A1F] border border-[#F5F5F7]/20 flex items-center justify-center">
-                  <Armchair className="w-4 h-4 text-[#9CA3AF]" />
-                </div>
+                <div className="w-6 h-6 rounded bg-[#1A1A1F] border border-[#F5F5F7]/20 flex items-center justify-center"><Armchair className="w-4 h-4 text-[#9CA3AF]" /></div>
                 <span>Свободно</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-[#E50914] shadow-[0_0_10px_rgba(229,9,20,0.4)] flex items-center justify-center">
-                  <Armchair className="w-4 h-4 text-white" />
-                </div>
+                <div className="w-6 h-6 rounded bg-[#E50914] shadow-[0_0_10px_rgba(229,9,20,0.4)] flex items-center justify-center"><Armchair className="w-4 h-4 text-white" /></div>
                 <span className="text-white">Выбрано</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-[#232329] border border-[#F5F5F7]/5 flex items-center justify-center opacity-50">
-                  <Armchair className="w-4 h-4 text-[#0B0B0D]" />
-                </div>
+                <div className="w-6 h-6 rounded bg-[#232329] border border-[#F5F5F7]/5 flex items-center justify-center opacity-50"><Armchair className="w-4 h-4 text-[#0B0B0D]" /></div>
                 <span>Занято</span>
               </div>
             </div>
@@ -354,9 +320,7 @@ export function SeatMap() {
         <AnimatePresence>
           {!isGuest && selectedSeatIds.length > 0 && (
               <motion.div
-                  initial={{ y: 100 }}
-                  animate={{ y: 0 }}
-                  exit={{ y: 100 }}
+                  initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
                   className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0B0B0D]/90 backdrop-blur-xl border-t border-[#F5F5F7]/10 p-4 pb-safe z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"
               >
                 <div className="flex items-center justify-between mb-3">
@@ -366,19 +330,8 @@ export function SeatMap() {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button
-                      onClick={() => handleProceed("book")}
-                      variant="outline"
-                      className="flex-1 font-heading tracking-widest uppercase border-[#FFC857]/40 text-[#FFC857] hover:bg-[#FFC857]/10"
-                  >
-                    Забронировать
-                  </Button>
-                  <Button
-                      onClick={() => handleProceed("buy")}
-                      className="flex-1 font-heading tracking-widest uppercase"
-                  >
-                    Оплатить
-                  </Button>
+                  <Button onClick={() => handleProceed("book")} variant="outline" className="flex-1 font-heading tracking-widest uppercase border-[#FFC857]/40 text-[#FFC857] hover:bg-[#FFC857]/10">Забронировать</Button>
+                  <Button onClick={() => handleProceed("buy")} className="flex-1 font-heading tracking-widest uppercase">Оплатить</Button>
                 </div>
               </motion.div>
           )}

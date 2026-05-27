@@ -8,6 +8,7 @@ tests/.env.test
 *.db
 *.db-journal
 data/cleaned_cinema_data.csv
+static
 
 frontend/node_modules/
 frontend/dist/
