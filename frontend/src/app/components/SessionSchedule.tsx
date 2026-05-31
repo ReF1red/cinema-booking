@@ -20,6 +20,7 @@ import { Input } from "./ui/input";
 
 interface SessionRow {
   sessionId: number;
+  movieId: number;
   movieTitle: string;
   posterUrl: string;
   startTime: string;
@@ -69,8 +70,11 @@ export function SessionSchedule() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [searchQuery, setSearchQuery] = useState("");
+  const [allMovies, setAllMovies] = useState<Movie[]>([]);
 
-  // 11 дней начиная с сегодня
+  const [searchResults, setSearchResults] = useState<SessionRow[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
   const dates = useMemo(
       () => Array.from({ length: 11 }).map((_, i) => addDays(new Date(), i)),
       [],
@@ -114,12 +118,12 @@ export function SessionSchedule() {
         const movieById = new Map<number, Movie>(movies.map((m) => [m.movie_id, m]));
         const hallById = new Map<number, Hall>(halls.map((h) => [h.hall_id, h]));
         const now = Date.now();
-        const weekEnd = addDays(new Date(), 11).getTime(); // 11 дней вместо 7
+        const weekEnd = addDays(new Date(), 11).getTime();
 
         const scheduleRows: SessionRow[] = sessions
             .filter((s) => {
               const ts = toTimestamp(s.start_time);
-              return ts >= now && ts <= weekEnd; // только в пределах 11 дней
+              return ts >= now && ts <= weekEnd;
             })
             .sort((a, b) => toTimestamp(a.start_time) - toTimestamp(b.start_time))
             .map((s) => {
@@ -127,6 +131,7 @@ export function SessionSchedule() {
               const hall = hallById.get(s.hall_id);
               return {
                 sessionId: s.session_id,
+                movieId: s.movie_id,
                 movieTitle: movie?.title ?? s.movie_title ?? "Фильм",
                 posterUrl:
                     movie?.poster_url ||
@@ -137,6 +142,7 @@ export function SessionSchedule() {
             });
 
         setRows(scheduleRows);
+        setAllMovies(movies);
       } catch (loadError) {
         if (!isMounted) return;
         setError(getErrorMessage(loadError, "Не удалось загрузить расписание сеансов."));
@@ -161,22 +167,33 @@ export function SessionSchedule() {
       [cinemas, selectedCinema],
   );
 
-  // Фильтрованные сеансы для поиска (по названию фильма)
-  const filteredRows = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const query = searchQuery.trim().toLowerCase();
-    return rows
-        .filter((row) => row.movieTitle.toLowerCase().includes(query))
-        .sort((a, b) => toTimestamp(a.startTime) - toTimestamp(b.startTime));
-  }, [rows, searchQuery]);
+  const handleSearch = async (value: string) => {
+      setSearchQuery(value);
+      if (value.trim().length < 2) {
+          setSearchResults([]);
+          return;
+      }
+      setSearchLoading(true);
+      try {
+          const q = value.trim().toLowerCase();
+          const matchedIds = new Set(
+              allMovies
+                  .filter(m => m.title.toLowerCase().includes(q))
+                  .map(m => m.movie_id)
+          );
+          setSearchResults(rows.filter(r => matchedIds.has(r.movieId)));
+      } catch {
+          setSearchResults([]);
+      } finally {
+          setSearchLoading(false);
+      }
+  };
 
-  // Сеансы для выбранной даты (в обычном режиме)
   const rowsForSelectedDate = useMemo(
       () => rows.filter((row) => getSessionDayKey(row.startTime) === selectedDate),
       [rows, selectedDate],
   );
 
-  // Какие дни есть сеансы (для точек)
   const daysWithSessions = useMemo(
       () => new Set(rows.map((row) => getSessionDayKey(row.startTime))),
       [rows],
@@ -186,7 +203,6 @@ export function SessionSchedule() {
 
   if (!user) return <Navigate to="/" replace />;
 
-  // Рендер списка сеансов (общий для обычного режима и поиска)
   const renderSessionCards = (sessionsToRender: SessionRow[]) => {
     if (sessionsToRender.length === 0) {
       return (
@@ -254,7 +270,7 @@ export function SessionSchedule() {
                 type="text"
                 placeholder="Поиск по названию фильма..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="pl-10 bg-[#1A1A1F] border-[#F5F5F7]/10 text-white placeholder:text-[#9CA3AF]"
             />
           </div>
@@ -285,15 +301,17 @@ export function SessionSchedule() {
               ) : (
                   <div className="space-y-8">
                     {searchQuery.trim() ? (
-                        // Режим поиска – показываем только отфильтрованные сеансы
                         <div className="space-y-3">
                           <h2 className="text-lg font-heading uppercase tracking-wide text-white">
-                            Результаты поиска: {filteredRows.length}
+                            Результаты поиска: {searchResults.length}
                           </h2>
-                          {renderSessionCards(filteredRows)}
+                          {searchLoading ? (
+                          <p className="text-[#9CA3AF]">Поиск...</p>
+                          ) : (
+                              renderSessionCards(searchResults)
+                          )}
                         </div>
                     ) : (
-                        // Обычный режим – с днями и пагинацией
                         <>
                           {/* Ближайший сеанс */}
                           {nearestSession && (
@@ -308,7 +326,7 @@ export function SessionSchedule() {
                               </Card>
                           )}
 
-                          {/* Пагинация по дням (11 кнопок, откалиброваны по ширине) */}
+                          {/* Пагинация по дням */}
                           <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden justify-start">
                             {dates.map((date) => {
                               const dateStr = format(date, "yyyy-MM-dd");

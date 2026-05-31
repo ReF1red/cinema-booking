@@ -19,6 +19,13 @@ ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 def get_movies(db: Session = Depends(get_db)):
     return MovieService.get_all_movies(db)
 
+@router.get("/featured", response_model=List[schemas.MovieOut])
+def get_featured_movies(
+    cinema_id: int = Query(..., description="ID кинотеатра"),
+    db: Session = Depends(get_db)
+):
+    return MovieService.get_featured_movies(db, cinema_id)
+
 @router.get("/search", response_model=List[schemas.MovieOut])
 def search_movies(
     q: str = Query(..., min_length=2, description="Поисковый запрос"),

@@ -39,7 +39,6 @@ export function BookingConfirmation() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // === ЗАЩИТА ОТ ГОСТЯ ===
   if (user?.role === "guest") {
     return <Navigate to="/" replace />;
   }

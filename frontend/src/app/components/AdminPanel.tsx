@@ -205,6 +205,10 @@ export function AdminPanel() {
   const hallNameMap = useMemo(() => new Map(halls.map((h) => [h.hall_id, h.hall_name])), [halls]);
   const movieNameMap = useMemo(() => new Map(movies.map((m) => [m.movie_id, m.title])), [movies]);
 
+  const [sessionMovieSearch, setSessionMovieSearch] = useState("");
+  const [showMovieDropdown, setShowMovieDropdown] = useState(false);
+  const [filteredMoviesForSession, setFilteredMoviesForSession] = useState<Movie[]>([]);
+
   const loadMetrics = async () => {
     setMetricsLoading(true);
     setMetricsError(null);
@@ -421,6 +425,8 @@ export function AdminPanel() {
     }
     if (movieForm.posterFile) {
       formData.append("poster", movieForm.posterFile);
+    } else if (movieForm.movie_id && movieForm.poster_url && !movieForm.poster_url.startsWith("blob:")) {
+      formData.append("poster_url", movieForm.poster_url);
     }
 
     try {
@@ -681,7 +687,26 @@ export function AdminPanel() {
                                   Бэкап БД
                               </Button>
                           )}
-                        </div>
+                          {canManageGlobalData && (
+                              <Button variant="outline" onClick={async () => {
+                                  if (!window.confirm("Восстановить базу данных из последней резервной копии? Все текущие данные будут потеряны.")) return;
+                                  try {
+                                      const resp = await fetch("/api/admin/restore", { method: "POST", credentials: "include" });
+                                      const data = await resp.json();
+                                      if (resp.ok) {
+                                          showSuccess("База данных успешно восстановлена. Страница перезагрузится через 3 секунды.");
+                                          setTimeout(() => window.location.reload(), 3000);
+                                      } else {
+                                          showError(data.detail || "Ошибка восстановления базы данных");
+                                      }
+                                  } catch {
+                                      showError("Не удалось выполнить восстановление. Проверьте соединение с сервером.");
+                                  }
+                              }}>
+                                  Восстановить БД
+                              </Button>
+                          )}
+                      </div>
 
                         {user?.role === "admin" && (    
                           <div className="bg-[#1A1A1F] rounded-lg border border-[#F5F5F7]/10 p-4 md:max-w-[700px]">
@@ -769,10 +794,47 @@ export function AdminPanel() {
                             {halls.map((hall) => <option key={hall.hall_id} value={hall.hall_id}>{hall.hall_name}</option>)}
                           </select>
                           <label className="text-sm text-[#9CA3AF]">Фильм</label>
-                          <select value={sessionForm.movie_id || 0} onChange={(e) => setSessionForm((p) => ({ ...p, movie_id: Number(e.target.value) }))} className="w-full h-11 rounded-xl border border-[#F5F5F7]/10 bg-[#0B0B0D] px-3 text-white">
-                            <option value={0}>Выберите фильм</option>
-                            {movies.map((movie) => <option key={movie.movie_id} value={movie.movie_id}>{movie.title}</option>)}
-                          </select>
+                          <div className="relative">
+                            <Input
+                              type="text"
+                              placeholder="Поиск фильма..."
+                              value={sessionMovieSearch}
+                              onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSessionMovieSearch(value);
+                                    if (value.trim().length >= 2) {
+                                      const q = value.trim().toLowerCase();
+                                      setFilteredMoviesForSession(movies.filter(m => m.title.toLowerCase().includes(q)).slice(0, 6));
+                                      setShowMovieDropdown(true);
+                                    } else {
+                                      setShowMovieDropdown(false);
+                                    }
+                                }}
+                                onFocus={() => {
+                                  if (sessionMovieSearch.trim().length >= 2) setShowMovieDropdown(true);
+                                }}
+                                onBlur={() => setTimeout(() => setShowMovieDropdown(false), 200)}
+                                className="bg-[#0B0B0D] border-[#F5F5F7]/10"
+                            />
+                            {showMovieDropdown && filteredMoviesForSession.length > 0 && (
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-[#1A1A1F] border border-[#F5F5F7]/10 rounded-xl overflow-hidden z-50 shadow-2xl max-h-60 overflow-y-auto">
+                                {filteredMoviesForSession.map(movie => (
+                                        <button
+                                          key={movie.movie_id}
+                                          onMouseDown={() => {
+                                            setSessionForm((p) => ({ ...p, movie_id: movie.movie_id }));
+                                            setSessionMovieSearch(movie.title);
+                                            setShowMovieDropdown(false);
+                                          }}
+                                            className="w-full text-left px-4 py-3 hover:bg-[#232329] transition-colors"
+                                        >
+                                          <p className="text-white text-sm font-medium">{movie.title}</p>
+                                          <p className="text-[#9CA3AF] text-xs">{movie.release_year} • {movie.genre?.split("/")[0]}</p>
+                                        </button>
+                                    ))}
+                              </div>
+                            )}
+                        </div>
                           <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
                               <Input type="datetime-local" min={getMinDatetimeLocal()} value={sessionForm.start_time_local} onChange={(e) => setSessionForm((p) => ({ ...p, start_time_local: e.target.value }))} className={isSessionDateInvalid ? "border-red-500/70" : ""} />

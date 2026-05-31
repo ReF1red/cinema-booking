@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Clock, Search, Star } from "lucide-react";
 import { useApp } from "../../context/AppContext";
-import { fetchCinemasByCity, fetchCities, fetchMovies, getErrorMessage } from "../../lib/api";
+import { fetchCinemasByCity, fetchCities, fetchMovies, getErrorMessage, fetchFeaturedMovies } from "../../lib/api";
 import { formatDuration, getMovieAgeLabel, getMoviePoster } from "../../lib/formatters";
 import type { Cinema, City, Movie } from "../../lib/types";
 import { Button } from "./ui/button";
@@ -26,10 +26,18 @@ function getMovieRating(movie: Movie): number {
   return getSyntheticRating(movie);
 }
 
-function getShortDescription(movie: Movie, maxLength = 140): string {
+function getShortDescription(movie: Movie, maxLength = 100): string {
   const text = (movie.description ?? "").trim();
   if (!text) return "Описание фильма пока не добавлено.";
-  return text.length <= maxLength ? text : `${text.slice(0, maxLength).trimEnd()}...`;
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength).trimEnd().replace(/[.,!?;:]+$/, "") + "...";
+}
+
+function getShortGenre(movie: Movie, maxLength = 30): string {
+  const genre = (movie.genre ?? "").trim();
+  if (!genre) return "Фильм";
+  if (genre.length <= maxLength) return genre;
+  return genre.slice(0, maxLength).trimEnd().replace(/[,/]+$/, "") + "...";
 }
 
 function buildRailMovies(source: Movie[], predicate: (movie: Movie) => boolean, limit = 12): Movie[] {
@@ -37,6 +45,12 @@ function buildRailMovies(source: Movie[], predicate: (movie: Movie) => boolean, 
   const matched = source.filter(predicate);
   const reserve = source.filter((m) => !matched.some((x) => x.movie_id === m.movie_id));
   return [...matched, ...reserve].slice(0, limit);
+}
+
+function convertToUsd(amount: number | null | undefined, currency: string | null | undefined): number {
+    if (amount == null || amount <= 0) return 0;
+    const curr = (currency || "RUB").toUpperCase();
+    return curr === "RUB" ? amount / 90 : amount;
 }
 
 export function MovieCatalog() {
@@ -51,8 +65,21 @@ export function MovieCatalog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [dropdownMovies, setDropdownMovies] = useState<Movie[]>([]);
+
   useEffect(() => {
       setSearchQuery("");
+      
+      const load = async () => {
+          setLoading(true);
+          try {
+              const moviesList = await fetchMovies();
+              setMovies(moviesList);
+          } catch {}
+          finally { setLoading(false); }
+      };
+      load();
   }, []);
 
   useEffect(() => {
@@ -91,26 +118,32 @@ export function MovieCatalog() {
     [cityCinemas, selectedCinema],
   );
 
-  const filteredMovies = useMemo(() => {
-    if (!searchQuery.trim()) return movies;
-    const q = searchQuery.trim().toLowerCase();
-    return movies.filter((m) => m.title.toLowerCase().includes(q));
-  }, [movies, searchQuery]);
-
   const moviesByRating = useMemo(
-    () => [...filteredMovies].sort((a, b) => getMovieRating(b) - getMovieRating(a)),
-    [filteredMovies],
+    () => [...movies].sort((a, b) => getMovieRating(b) - getMovieRating(a)),
+    [movies],
   );
   const moviesByReleaseYear = useMemo(
-    () => [...filteredMovies].sort((a, b) => (b.release_year ?? 0) - (a.release_year ?? 0)),
-    [filteredMovies],
+    () => [...movies].sort((a, b) => (b.release_year ?? 0) - (a.release_year ?? 0)),
+    [movies],
   );
   const moviesByBudget = useMemo(
-    () => [...filteredMovies].sort((a, b) => (b.budget_amount ?? 0) - (a.budget_amount ?? 0) || getMovieRating(b) - getMovieRating(a)),
-    [filteredMovies],
+    () => [...movies].sort((a, b) => convertToUsd(b.budget_amount, b.budget_currency) - convertToUsd(a.budget_amount, a.budget_currency) || getMovieRating(b) - getMovieRating(a)),
+    [movies],
   );
 
-  const showcaseMovies = useMemo(() => moviesByRating.slice(0, 4), [moviesByRating]);
+  const [featuredMovies, setFeaturedMovies] = useState<Movie[]>([]);
+
+  useEffect(() => {
+      if (selectedCinema) {
+          fetchFeaturedMovies(selectedCinema).then(setFeaturedMovies).catch(() => setFeaturedMovies([]));
+      }
+  }, [selectedCinema]);
+
+  const showcaseMovies = useMemo(() => {
+      if (featuredMovies.length > 0) return featuredMovies;
+      return moviesByRating.slice(0, 4);
+  }, [featuredMovies, moviesByRating]);
+
   const currentYear = new Date().getFullYear();
 
   const movieRails = useMemo<MovieRail[]>(() => [
@@ -145,10 +178,45 @@ export function MovieCatalog() {
           type="text"
           placeholder="Поиск фильма..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSearchQuery(value);
+            if (value.trim().length >= 2) {
+              const q = value.trim().toLowerCase();
+              setDropdownMovies(movies.filter(m => m.title.toLowerCase().includes(q)).slice(0, 12));
+              setShowDropdown(true);
+            } else {
+              setShowDropdown(false);
+            }
+          }}
+          onFocus={() => {
+              if (searchQuery.trim().length >= 2) setShowDropdown(true);
+          }}
+          onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
           className="pl-10 bg-[#1A1A1F] border-[#F5F5F7]/10 text-white placeholder:text-[#9CA3AF]"
-        />
-      </div>
+      />
+      {showDropdown && dropdownMovies.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-[#1A1A1F] border border-[#F5F5F7]/10 rounded-xl overflow-hidden z-50 shadow-2xl">
+              {dropdownMovies.map(movie => (
+                  <button
+                      key={movie.movie_id}
+                      onClick={() => {
+                          navigate(`/movie/${movie.movie_id}`);
+                          setSearchQuery("");
+                          setShowDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-[#232329] transition-colors flex items-center gap-3"
+                  >
+                      <img src={getMoviePoster(movie)} alt="" className="w-8 h-12 rounded object-cover" />
+                      <div>
+                          <p className="text-white text-sm font-medium">{movie.title}</p>
+                          <p className="text-[#9CA3AF] text-xs">{movie.release_year} • {movie.genre?.split("/")[0]}</p>
+                      </div>
+                  </button>
+              ))}
+          </div>
+      )}
+  </div>
 
       {error && (
         <Card className="bg-red-500/10 border-red-500/30 p-6 mb-8">
@@ -158,7 +226,7 @@ export function MovieCatalog() {
 
       {loading ? (
         <div className="text-[#9CA3AF]">Загружаем фильмы...</div>
-      ) : filteredMovies.length === 0 ? (
+      ) : movies.length === 0 ? (
         <Card className="bg-[#1A1A1F] border-[#F5F5F7]/10 p-10 text-center">
           <h2 className="text-2xl font-heading text-white uppercase tracking-wide mb-3">Фильмы не найдены</h2>
           <p className="text-[#9CA3AF]">{searchQuery ? "По вашему запросу ничего не найдено." : "В базе пока нет фильмов для отображения."}</p>
@@ -183,13 +251,13 @@ export function MovieCatalog() {
                       <h3 className="text-lg font-heading text-white tracking-wide uppercase leading-tight min-h-[3.5rem]">{movie.title}</h3>
                       <div className="flex flex-wrap items-center gap-2 text-xs text-[#9CA3AF]">
                         <span className="flex items-center gap-1 bg-[#232329] px-2 py-1 rounded-md"><Clock className="w-3.5 h-3.5" />{formatDuration(movie.duration_min)}</span>
-                        <span className="px-2 py-1 rounded-md border border-[#F5F5F7]/10">{movie.genre?.split("/")[0].trim() || "Фильм"}</span>
+                        <span className="px-2 py-1 rounded-md border border-[#F5F5F7]/10 max-w-[540px] truncate">{getShortGenre(movie)}</span>
                       </div>
                       <p className="text-sm text-[#D1D5DB] leading-relaxed min-h-[4.5rem]">{getShortDescription(movie)}</p>
                       {isGuest ? (
-                        <Button className="w-full font-heading tracking-widest uppercase" variant="outline" onClick={() => navigate("/")}>Войти, чтобы купить</Button>
+                          <Button className="w-full font-heading tracking-widest uppercase" variant="outline" onClick={() => { localStorage.clear(); window.location.href = "/"; }}>Войти, чтобы купить</Button>
                       ) : (
-                        <Button className="w-full font-heading tracking-widest uppercase" onClick={(e) => { e.stopPropagation(); navigate(`/movie/${movie.movie_id}`); }}>Купить билет</Button>
+                          <Button className="w-full font-heading tracking-widest uppercase" onClick={(e) => { e.stopPropagation(); navigate(`/movie/${movie.movie_id}`); }}>Купить билет</Button>
                       )}
                     </div>
                   </Card>

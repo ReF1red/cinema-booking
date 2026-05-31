@@ -82,6 +82,10 @@ export function updateProfile(payload: { full_name?: string; email?: string }) {
     });
 }
 
+export function fetchFeaturedMovies(cinemaId: number) {
+    return apiRequest<Movie[]>(`/movies/featured?cinema_id=${cinemaId}`);
+}
+
 export class ApiError extends Error {
   status: number;
   details?: unknown;

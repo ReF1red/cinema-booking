@@ -9,6 +9,7 @@ tests/.env.test
 *.db-journal
 data/cleaned_cinema_data.csv
 static
+backups
 
 frontend/node_modules/
 frontend/dist/

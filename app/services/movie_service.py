@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models import models
 from app.schemas import schemas
 from fastapi import HTTPException, status 
+from datetime import datetime, timedelta
 import json
 
 class MovieService:
@@ -118,7 +119,10 @@ class MovieService:
         movie.description = movie_data.description
         movie.duration_min = movie_data.duration_min
         movie.genre = movie_data.genre
-        movie.poster_url = movie_data.poster_url
+
+        if movie_data.poster_url is not None:
+            movie.poster_url = movie_data.poster_url
+            
         movie.release_year = movie_data.release_year
         movie.rating = movie_data.rating
         movie.director = movie_data.director
@@ -208,4 +212,49 @@ class MovieService:
                 "main_actors": json.loads(movie.main_actors) if movie.main_actors else None,
                 "age_rating": movie.age_rating
             })
+        return result
+
+    @staticmethod
+    def get_featured_movies(db: Session, cinema_id: int):
+        now = datetime.now()
+        week_end = now + timedelta(days=7)
+        
+        sessions = db.query(models.Session).join(models.Hall).filter(
+            models.Hall.cinema_id == cinema_id,
+            models.Session.start_time >= now,
+            models.Session.start_time <= week_end
+        ).all()
+        
+        movie_ids = list(set(s.movie_id for s in sessions))
+        
+        if movie_ids:
+            movies = db.query(models.Movie).filter(
+                models.Movie.movie_id.in_(movie_ids)
+            ).order_by(models.Movie.rating.desc().nullslast()).limit(4).all() 
+        else:
+            movies = db.query(models.Movie).filter(
+                models.Movie.release_year >= 2020
+            ).order_by(models.Movie.rating.desc().nullslast()).limit(4).all()
+        
+        result = []
+
+        for movie in movies:
+            result.append({
+                "movie_id": movie.movie_id,
+                "title": movie.title,
+                "description": movie.description,
+                "duration_min": movie.duration_min,
+                "genre": movie.genre,
+                "poster_url": movie.poster_url,
+                "release_year": movie.release_year,
+                "rating": movie.rating,
+                "director": movie.director,
+                "writer": movie.writer,
+                "country": movie.country,
+                "budget_amount": movie.budget_amount,
+                "budget_currency": movie.budget_currency,
+                "main_actors": json.loads(movie.main_actors)  if movie.main_actors else None,
+                "age_rating": movie.age_rating
+            })
+
         return result

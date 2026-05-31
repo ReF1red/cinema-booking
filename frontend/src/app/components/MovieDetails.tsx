@@ -201,7 +201,10 @@ export function MovieDetails() {
                         size="lg"
                         variant="outline"
                         className="w-full sm:w-auto text-xl font-heading tracking-widest px-12 h-16"
-                        onClick={() => navigate("/")}
+                        onClick={() => {
+                          localStorage.clear();
+                          window.location.href = "/";
+                      }}
                     >
                       <Ticket className="w-6 h-6 mr-2" /> Войти, чтобы купить
                     </Button>
