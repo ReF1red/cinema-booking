@@ -267,7 +267,7 @@ def get_ticket_pdf(
     seat_str = ", ".join(seat_labels)
     
     qr_data = json.dumps({
-        "ticket_ids": [t.ticket_id for t in tickets_data],
+        "ticket_ids": [b.booking_id for b in bookings],
         "movie": movie.title,
         "date": session.start_time.isoformat(),
         "city": city.city_name,

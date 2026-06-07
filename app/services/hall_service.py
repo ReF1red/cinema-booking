@@ -98,6 +98,8 @@ class HallService:
             )
 
         hall.hall_name = hall_data.hall_name
+        hall.rows_count = hall_data.rows_count
+        hall.seats_per_row = hall_data.seats_per_row 
         
         db.commit()
         db.refresh(hall)

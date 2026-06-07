@@ -132,17 +132,26 @@ export function MovieCatalog() {
   );
 
   const [featuredMovies, setFeaturedMovies] = useState<Movie[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
 
   useEffect(() => {
       if (selectedCinema) {
-          fetchFeaturedMovies(selectedCinema).then(setFeaturedMovies).catch(() => setFeaturedMovies([]));
+          setFeaturedLoading(true);
+          fetchFeaturedMovies(selectedCinema)
+            .then(setFeaturedMovies)
+            .catch(() => setFeaturedMovies([]))
+            .finally(() => setFeaturedLoading(false));
+      } else {
+        setFeaturedMovies([]);
+        setFeaturedLoading(false);
       }
   }, [selectedCinema]);
 
   const showcaseMovies = useMemo(() => {
+      if (featuredLoading) return [];
       if (featuredMovies.length > 0) return featuredMovies;
       return moviesByRating.slice(0, 4);
-  }, [featuredMovies, moviesByRating]);
+  }, [featuredMovies, moviesByRating, featuredLoading]);
 
   const currentYear = new Date().getFullYear();
 
@@ -236,7 +245,10 @@ export function MovieCatalog() {
           <section className="space-y-5">
             <h2 className="text-xl font-heading tracking-widest uppercase text-[#FFC857] border-b border-[#F5F5F7]/10 pb-3">Основные премьеры</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-              {showcaseMovies.map((movie, index) => (
+              {featuredLoading ? (
+                <div className="col-span-full text-[#9CA3AF] text-center py-8">Загружаем премьеры...</div>
+              ) : (
+              showcaseMovies.map((movie, index) => (
                 <motion.article key={movie.movie_id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.08 }}>
                   <Card className="bg-[#1A1A1F] border-transparent overflow-hidden shadow-2xl h-full">
                     <div className="relative aspect-[2/3] overflow-hidden bg-black cursor-pointer" onClick={() => navigate(`/movie/${movie.movie_id}`)}>
@@ -262,7 +274,7 @@ export function MovieCatalog() {
                     </div>
                   </Card>
                 </motion.article>
-              ))}
+              )))}  
             </div>
           </section>
 

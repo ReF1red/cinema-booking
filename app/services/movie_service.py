@@ -227,15 +227,26 @@ class MovieService:
         
         movie_ids = list(set(s.movie_id for s in sessions))
         
+        movies = []
+        seen_ids = set()
+
         if movie_ids:
-            movies = db.query(models.Movie).filter(
+            session_movies = db.query(models.Movie).filter(
                 models.Movie.movie_id.in_(movie_ids)
-            ).order_by(models.Movie.rating.desc().nullslast()).limit(4).all() 
-        else:
-            movies = db.query(models.Movie).filter(
+            ).order_by(models.Movie.rating.desc().nullslast()).all()
+            for movie in session_movies:
+                movies.append(movie)
+                seen_ids.add(movie.movie_id)
+
+        if len(movies) < 4:
+            need = 4 - len(movies)
+            filler_movies = db.query(models.Movie).filter(
+                models.Movie.movie_id.notin_(seen_ids) if seen_ids else True,
                 models.Movie.release_year >= 2020
-            ).order_by(models.Movie.rating.desc().nullslast()).limit(4).all()
-        
+            ).order_by(models.Movie.rating.desc().nullslast()).limit(need).all()
+            
+            movies.extend(filler_movies)
+
         result = []
 
         for movie in movies:
@@ -253,7 +264,7 @@ class MovieService:
                 "country": movie.country,
                 "budget_amount": movie.budget_amount,
                 "budget_currency": movie.budget_currency,
-                "main_actors": json.loads(movie.main_actors)  if movie.main_actors else None,
+                "main_actors": json.loads(movie.main_actors) if movie.main_actors else None,
                 "age_rating": movie.age_rating
             })
 

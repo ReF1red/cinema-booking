@@ -458,12 +458,15 @@ export function fetchMovieById(movieId: number) {
   return apiRequest<Movie>(`/movies/${movieId}`)
       .then(normalizeMovie)
       .then((movie) => {
-        const currentMovies = readCache(moviesCache) ?? [];
-        const index = currentMovies.findIndex((item) => item.movie_id === movie.movie_id);
-        const nextMovies = [...currentMovies];
-        if (index >= 0) nextMovies[index] = movie;
-        else nextMovies.push(movie);
-        moviesCache = makeCacheEntry(nextMovies);
+        const currentMovies = readCache(moviesCache);
+        if (currentMovies) {
+          const index = currentMovies.findIndex((item) => item.movie_id === movie.movie_id);
+          if (index >= 0) {
+            currentMovies[index] = movie;
+          }
+          moviesCache = makeCacheEntry(currentMovies);
+        }
+        
         return movie;
       });
 }

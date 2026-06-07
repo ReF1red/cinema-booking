@@ -59,13 +59,13 @@ export function SessionSelection() {
 
     let isMounted = true;
 
-    const loadMovieAndSessions = async () => {
+    const loadAllSessions = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [movies, sessions] = await Promise.all([
+        const [movies, ...sessionsByDay] = await Promise.all([
           fetchMovies(),
-          fetchSessionsByMovie(movieIdNumber, selectedDate),
+          ...dates.map((date) => fetchSessionsByMovie(movieIdNumber, format(date, "yyyy-MM-dd"))),
         ]);
 
         if (!isMounted) return;
@@ -73,20 +73,20 @@ export function SessionSelection() {
         const currentMovie = movies.find((item) => item.movie_id === movieIdNumber) ?? null;
         setMovie(currentMovie);
 
-        setAllSessions(
-            sessions.filter((s) => !isSessionStarted(s.start_time) && isSessionWithinWeek(s.start_time)),
+        const all = sessionsByDay.flat().filter(
+          (s) => !isSessionStarted(s.start_time) && isSessionWithinWeek(s.start_time)
         );
+        setAllSessions(all);
       } catch (loadError) {
-        if (!isMounted) return;
-        setError(getErrorMessage(loadError, "Не удалось загрузить сеансы."));
+        if (!isMounted) setError(getErrorMessage(loadError, "Не удалось загрузить сеансы."));
       } finally {
         if (isMounted) setLoading(false);
       }
     };
 
-    loadMovieAndSessions();
+    loadAllSessions();
     return () => { isMounted = false; };
-  }, [movieIdNumber, selectedDate]);
+  }, [movieIdNumber]);
 
   useEffect(() => {
     let isMounted = true;
@@ -128,9 +128,13 @@ export function SessionSelection() {
   }, [selectedCity]);
 
   const sessionsByCinema = useMemo(() => {
+    const sessionsForDate = allSessions.filter(
+      (s) => s.start_time.slice(0, 10) === selectedDate
+    );
+
     const grouped = new Map<number, { cinema: Cinema; sessions: Session[] }>();
 
-    allSessions.forEach((session) => {
+    sessionsForDate.forEach((session) => {
       const cinema = hallToCinema[session.hall_id];
       if (!cinema) return;
       if (selectedCinema && cinema.cinema_id !== selectedCinema) return;
@@ -145,13 +149,15 @@ export function SessionSelection() {
       ...entry,
       sessions: [...entry.sessions].sort((a, b) => a.start_time.localeCompare(b.start_time)),
     }));
-  }, [allSessions, hallToCinema, selectedCinema]);
+  }, [allSessions, hallToCinema, selectedCinema, selectedDate]);
 
   const daysWithSessions = useMemo(() => {
     const days = new Set<string>();
-    if (sessionsByCinema.length > 0) days.add(selectedDate);
+    allSessions.forEach((s) => {
+      days.add(s.start_time.slice(0, 10));
+    });
     return days;
-  }, [sessionsByCinema, selectedDate]);
+  }, [allSessions]);
 
   if (!user) return <Navigate to="/" replace />;
   if (!movieIdNumber) return <div className="p-8 text-center text-red-400">Некорректный id фильма.</div>;
@@ -227,12 +233,11 @@ export function SessionSelection() {
             </h2>
 
             <div className="space-y-6">
-              <AnimatePresence mode="wait">
                 {sessionsByCinema.length === 0 ? (
                     <motion.div
+                        key={selectedDate + "-empty"}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
                         className="bg-[#1A1A1F] border border-[#F5F5F7]/10 rounded-xl p-12 text-center"
                     >
                       <Clock className="w-12 h-12 text-[#9CA3AF] mx-auto mb-4 opacity-50" />
@@ -242,7 +247,7 @@ export function SessionSelection() {
                 ) : (
                     sessionsByCinema.map(({ cinema, sessions }, index) => (
                         <motion.div
-                            key={cinema.cinema_id}
+                            key={`${cinema.cinema_id}-${selectedDate}`}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
@@ -290,7 +295,6 @@ export function SessionSelection() {
                         </motion.div>
                     ))
                 )}
-              </AnimatePresence>
             </div>
           </motion.div>
         </div>

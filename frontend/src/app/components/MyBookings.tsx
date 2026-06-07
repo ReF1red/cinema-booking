@@ -166,6 +166,9 @@ export function MyBookings() {
   const allGroups = useMemo(() => groupBookings(bookings), [bookings]);
 
   const activeGroups = useMemo(() => {
+    if (Object.keys(sessionMap).length === 0 && allGroups.length > 0) {
+      return [];
+    }
     return allGroups.filter((group) => {
       const session = sessionMap[group.sessionId];
       if (!session) return true;
@@ -175,6 +178,17 @@ export function MyBookings() {
 
   const unpaidGroups = useMemo(() => activeGroups.filter((g) => !g.paid), [activeGroups]);
   const paidGroups = useMemo(() => activeGroups.filter((g) => g.paid), [activeGroups]);
+
+  const pastGroups = useMemo(() => {
+    if (Object.keys(sessionMap).length === 0 && allGroups.length > 0) {
+      return [];
+    }
+    return allGroups.filter((group) => {
+      const session = sessionMap[group.sessionId];
+      if (!session) return false;
+      return hasSessionPassed(session.start_time);
+    });
+  }, [allGroups, sessionMap]);
 
   if (!user) return <Navigate to="/" replace />;
 
@@ -366,7 +380,7 @@ export function MyBookings() {
               <p className="text-[#9CA3AF]">Загружаем детали бронирований...</p>
           )}
 
-          {bookings.filter((b) => b.status !== "cancelled").length === 0 ? (
+          {activeGroups.length === 0 ? (
               <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -377,7 +391,7 @@ export function MyBookings() {
                 </div>
                 <p className="text-2xl text-white font-heading tracking-widest uppercase mb-4">Пока нет билетов</p>
                 <p className="text-[#9CA3AF] mb-8 max-w-md mx-auto">
-                  Вы ещё не забронировали ни одного билета. Выберите фильм и начните ваше приключение.
+                  Все ваши билеты уже использованы или срок их действия истёк. Выберите новый фильм!
                 </p>
                 <Button onClick={() => navigate("/home")} className="px-8 font-heading tracking-widest uppercase">
                   Выбрать фильм
